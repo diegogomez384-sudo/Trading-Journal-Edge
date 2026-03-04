@@ -152,6 +152,7 @@ function TradingJournal() {
   });
   const [view, setView] = useState("dashboard");
   const [showForm, setShowForm] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [isDark, setIsDark] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalTheme');
@@ -290,7 +291,7 @@ function TradingJournal() {
         .gbtn{background:#7fffb2;color:#06060d;border:none;cursor:pointer;padding:10px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;transition:all .2s;text-transform:uppercase;}
         .gbtn:hover{background:#5de89a;transform:translateY(-1px);}
         .gbtn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-        .ghost{background:none;border:1px solid #222235;color:#555;cursor:pointer;padding:6px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;transition:all .2s;text-transform:uppercase;}
+        .ghost{background:none;border:1px solid #222235;color:#ccc;cursor:pointer;padding:6px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;transition:all .2s;text-transform:uppercase;}
         .ghost:hover{border-color:#7fffb2;color:#7fffb2;}
         input,select,textarea{background:#0a0a14;border:1px solid #181828;color:#d8d8ec;padding:8px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;width:100%;transition:border .2s;outline:none;}
         input:focus,select:focus,textarea:focus{border-color:#7fffb2;}
@@ -304,7 +305,7 @@ function TradingJournal() {
         @keyframes p{0%,100%{opacity:1;}50%{opacity:.4;}}
         .ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
         .modal{background:#0c0c18;border:1px solid #22223a;border-radius:12px;padding:28px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;}
-        .lbl{font-size:10px;color:#383858;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:block;}
+        .lbl{font-size:10px;color:#8888a8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:block;}
         .tv-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;letter-spacing:.1em;background:rgba(0,221,255,.1);color:#00ddff;margin-left:6px;vertical-align:middle;}
       `}</style>
 
@@ -324,7 +325,7 @@ function TradingJournal() {
             <span style={{ color: "#1e1e38", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["calendar", "Calendar"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
           </div>
@@ -340,7 +341,7 @@ function TradingJournal() {
           {view === "dashboard" && (
             <div>
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-              <p style={{ color: "#252540", fontSize: 11, letterSpacing: ".05em", marginBottom: 22 }}>{trades.length} trades logged</p>
+              <p style={{ color: "#9595b0", fontSize: 11, letterSpacing: ".05em", marginBottom: 22 }}>{trades.length} trades logged</p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
                 {[
@@ -379,15 +380,15 @@ function TradingJournal() {
                         {t.ticker}
                         {t.source === "csv" && <span className="tv-badge">CSV</span>}
                       </p>
-                      <p style={{ fontSize: 10, color: "#2a2a45" }}>{t.date}</p>
+                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>{t.date}</p>
                     </div>
                     <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      <span className="tag" style={{ background: "#111120", color: "#555" }}>{t.strategy}</span>
+                      <span className="tag" style={{ background: "#111120", color: "#ccc" }}>{t.strategy}</span>
                       <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14` }}>{t.emotion}</span>
-                      <span className="tag" style={{ background: "#111120", color: "#444", fontSize: 9 }}>{t.session}</span>
+                      <span className="tag" style={{ background: "#111120", color: "#bbb", fontSize: 9 }}>{t.session}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: "#33334a" }}>{t.size}ct</span>
+                    <span style={{ fontSize: 11, color: "#a3a3ba" }}>{t.size}ct</span>
                     <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
                     <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                   </div>
@@ -416,24 +417,24 @@ function TradingJournal() {
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </p>
-                        <p style={{ fontSize: 9, color: "#252540" }}>{t.date}</p>
+                        <p style={{ fontSize: 9, color: "#9595b0" }}>{t.date}</p>
                       </div>
                       <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
-                      <span style={{ fontSize: 10, color: "#444", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
-                      <span style={{ fontSize: 11, color: "#555", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.strategy}</span>
+                      <span style={{ fontSize: 10, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
+                      <span style={{ fontSize: 11, color: "#ccc", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.strategy}</span>
                       <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.emotion}</span>
-                      <span style={{ fontSize: 12, color: "#444", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
-                      <span style={{ fontSize: 12, color: "#777", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
-                      <span style={{ fontSize: 12, color: "#777", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
+                      <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
+                      <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
+                      <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
                       <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right", cursor: "pointer" }} className={t.pnl >= 0 ? "pos" : "neg"} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                     </div>
                     {expandedTrade === t.id && (
                       <div style={{ padding: "14px 20px", background: "#09090f", borderBottom: "1px solid #0f0f1e" }}>
-                        <p style={{ fontSize: 12, color: "#555", marginBottom: 10, fontStyle: "italic" }}>{t.notes || "No notes recorded."}</p>
-                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#333", marginBottom: 12 }}>
-                          <span>Point value: <span style={{ color: "#666" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
-                          <span>Move: <span style={{ color: "#666" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
+                        <p style={{ fontSize: 12, color: "#ccc", marginBottom: 10, fontStyle: "italic" }}>{t.notes || "No notes recorded."}</p>
+                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#aaa", marginBottom: 12 }}>
+                          <span>Point value: <span style={{ color: "#ddd" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
+                          <span>Move: <span style={{ color: "#ddd" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
                           <span>Side: <span style={{ color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>{t.direction}</span></span>
                           {t.source === "csv" && <span style={{ color: "#00ddff" }}>CSV Import</span>}
                         </div>
@@ -466,7 +467,7 @@ function TradingJournal() {
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 12 }}>{s.name}</span>
                         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                          <span style={{ fontSize: 10, color: "#333" }}>{s.wr}% WR \u00B7 {s.count}t</span>
+                          <span style={{ fontSize: 10, color: "#aaa" }}>{s.wr}% WR \u00B7 {s.count}t</span>
                           <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
                         </div>
                       </div>
@@ -488,7 +489,7 @@ function TradingJournal() {
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 12, color: col }}>{e.name}</span>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <span style={{ fontSize: 10, color: "#333" }}>{e.count}t</span>
+                          <span style={{ fontSize: 10, color: "#aaa" }}>{e.count}t</span>
                           <span className={e.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{e.pnl >= 0 ? "+" : ""}${e.pnl.toLocaleString()}</span>
                         </div>
                       </div>
@@ -505,7 +506,7 @@ function TradingJournal() {
                 {sessPerf.map(s => (
                   <div key={s.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1e" }}>
                     <span style={{ fontSize: 12 }}>{s.name}</span>
-                    <span style={{ fontSize: 11, color: "#333" }}>{s.count} trades</span>
+                    <span style={{ fontSize: 11, color: "#aaa" }}>{s.count} trades</span>
                     <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
                   </div>
                 ))}
@@ -524,7 +525,7 @@ function TradingJournal() {
                   ["Net P&L", `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`],
                 ].map(([l, v]) => (
                   <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #0c0c1c" }}>
-                    <span style={{ fontSize: 12, color: "#444" }}>{l}</span>
+                    <span style={{ fontSize: 12, color: "#bbb" }}>{l}</span>
                     <span style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 600, color: "#d8d8ec" }}>{v}</span>
                   </div>
                 ))}
@@ -533,16 +534,133 @@ function TradingJournal() {
           )}
 
           {/* AI COACH */}
+          {/* CALENDAR */}
+          {view === "calendar" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <div>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Trading Calendar</p>
+                  <p style={{ color: "#555", fontSize: 11, letterSpacing: ".05em" }}>Daily performance breakdown</p>
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>←</button>
+                  <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#fff", minWidth: 180, textAlign: "center" }}>
+                    {calendarDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                  </span>
+                  <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>→</button>
+                  <button className="ghost" onClick={() => setCalendarDate(new Date())}>Today</button>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 20 }}>
+                {(() => {
+                  const year = calendarDate.getFullYear();
+                  const month = calendarDate.getMonth();
+                  const firstDay = new Date(year, month, 1).getDay();
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                  // Group trades by date
+                  const tradesByDate = {};
+                  trades.forEach(t => {
+                    const dateKey = t.date; // YYYY-MM-DD format
+                    if (!tradesByDate[dateKey]) {
+                      tradesByDate[dateKey] = [];
+                    }
+                    tradesByDate[dateKey].push(t);
+                  });
+
+                  // Calculate stats for each date
+                  const dateStats = {};
+                  Object.keys(tradesByDate).forEach(dateKey => {
+                    const dayTrades = tradesByDate[dateKey];
+                    const wins = dayTrades.filter(t => t.pnl > 0).length;
+                    const totalPnl = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
+                    const winRate = dayTrades.length > 0 ? Math.round((wins / dayTrades.length) * 100) : 0;
+                    dateStats[dateKey] = {
+                      count: dayTrades.length,
+                      pnl: totalPnl,
+                      winRate: winRate
+                    };
+                  });
+
+                  const days = [];
+                  // Add empty cells for days before month starts
+                  for (let i = 0; i < firstDay; i++) {
+                    days.push(<div key={`empty-${i}`} style={{ padding: 8, minHeight: 90 }} />);
+                  }
+
+                  // Add calendar days
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const stats = dateStats[dateKey];
+                    const isToday = new Date().toISOString().split('T')[0] === dateKey;
+
+                    days.push(
+                      <div key={day} style={{
+                        padding: 8,
+                        minHeight: 90,
+                        background: stats ? (stats.pnl >= 0 ? "rgba(127,255,178,0.08)" : "rgba(255,68,102,0.08)") : "#09090f",
+                        border: isToday ? "2px solid #7fffb2" : "1px solid #0f0f1e",
+                        borderRadius: 6,
+                        position: "relative"
+                      }}>
+                        <div style={{ fontSize: 11, color: isToday ? "#7fffb2" : "#555", marginBottom: 6, fontWeight: isToday ? 700 : 400 }}>{day}</div>
+                        {stats && (
+                          <div style={{ fontSize: 10 }}>
+                            <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 13, marginBottom: 4 }} className={stats.pnl >= 0 ? "pos" : "neg"}>
+                              {stats.pnl >= 0 ? "+" : ""}${stats.pnl.toLocaleString()}
+                            </div>
+                            <div style={{ color: "#666", marginBottom: 2 }}>{stats.count} trade{stats.count !== 1 ? 's' : ''}</div>
+                            <div style={{ color: stats.winRate >= 50 ? "#7fffb2" : "#ff4466", fontSize: 9 }}>{stats.winRate}% win</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 8 }}>
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                          <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#666", letterSpacing: ".1em", padding: "8px 0" }}>{d}</div>
+                        ))}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+                        {days}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Legend */}
+              <div style={{ display: "flex", gap: 20, marginTop: 16, fontSize: 11, color: "#666", justifyContent: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 12, height: 12, background: "rgba(127,255,178,0.08)", border: "1px solid rgba(127,255,178,0.3)", borderRadius: 2 }} />
+                  <span>Profitable Day</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 12, height: 12, background: "rgba(255,68,102,0.08)", border: "1px solid rgba(255,68,102,0.3)", borderRadius: 2 }} />
+                  <span>Loss Day</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 12, height: 12, border: "2px solid #7fffb2", borderRadius: 2 }} />
+                  <span>Today</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {view === "ai-coach" && (
             <div>
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
-              <p style={{ color: "#333", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
+              <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
 
               <div className="card" style={{ marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: aiReport || aiLoading || aiError ? 20 : 0 }}>
                   <div>
                     <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#fff", marginBottom: 5 }}>Full Portfolio Review</p>
-                    <p style={{ fontSize: 12, color: "#333" }}>Analyzes all {trades.length} trades \u2014 strategy edge, psychology, session timing & risk</p>
+                    <p style={{ fontSize: 12, color: "#aaa" }}>Analyzes all {trades.length} trades \u2014 strategy edge, psychology, session timing & risk</p>
                   </div>
                   <button className="gbtn" onClick={runAnalysis} disabled={aiLoading}>{aiLoading ? "Analyzing..." : "Run Analysis"}</button>
                 </div>
@@ -561,7 +679,7 @@ function TradingJournal() {
 
               <div className="card">
                 <p className="lbl" style={{ marginBottom: 4 }}>Trade-by-Trade Coaching</p>
-                <p style={{ fontSize: 11, color: "#252540", marginBottom: 16 }}>Get specific AI feedback on execution, psychology & improvement for each trade.</p>
+                <p style={{ fontSize: 11, color: "#9595b0", marginBottom: 16 }}>Get specific AI feedback on execution, psychology & improvement for each trade.</p>
                 {trades.map(t => (
                   <div key={t.id} style={{ padding: "12px 0", borderBottom: "1px solid #0f0f1e" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -570,10 +688,10 @@ function TradingJournal() {
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </span>
-                        <span style={{ fontSize: 10, color: "#252540" }}>{t.date}</span>
-                        <span className="tag" style={{ background: "#111120", color: "#555" }}>{t.strategy}</span>
+                        <span style={{ fontSize: 10, color: "#9595b0" }}>{t.date}</span>
+                        <span className="tag" style={{ background: "#111120", color: "#ccc" }}>{t.strategy}</span>
                         <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12` }}>{t.emotion}</span>
-                        <span className="tag" style={{ background: "#111120", color: "#333", fontSize: 9 }}>{t.session}</span>
+                        <span className="tag" style={{ background: "#111120", color: "#aaa", fontSize: 9 }}>{t.session}</span>
                       </div>
                       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                         <span className={t.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</span>
@@ -600,7 +718,7 @@ function TradingJournal() {
           <div className="modal" style={{ filter: isDark ? "none" : "invert(1) hue-rotate(180deg)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
               <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 17, color: "#fff" }}>Import Tradovate CSV</p>
-              <button onClick={() => setShowImport(false)} style={{ background: "none", border: "none", color: "#333", cursor: "pointer", fontSize: 24 }}>{"\u00D7"}</button>
+              <button onClick={() => setShowImport(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>{"\u00D7"}</button>
             </div>
 
             <div
@@ -627,17 +745,17 @@ function TradingJournal() {
                 onChange={e => handleCsvFile(e.target.files[0])}
               />
               <p style={{ fontSize: 28, marginBottom: 8, opacity: 0.3 }}>{"\uD83D\uDCC4"}</p>
-              <p style={{ fontSize: 13, color: "#555", marginBottom: 6 }}>Drag & drop your Tradovate CSV here</p>
-              <p style={{ fontSize: 11, color: "#333" }}>or click to browse files</p>
+              <p style={{ fontSize: 13, color: "#ccc", marginBottom: 6 }}>Drag & drop your Tradovate CSV here</p>
+              <p style={{ fontSize: 11, color: "#aaa" }}>or click to browse files</p>
             </div>
 
             <div style={{ background: "#09090f", borderRadius: 6, padding: "14px 16px", marginBottom: 16 }}>
               <p style={{ fontSize: 10, color: "#7fffb2", letterSpacing: ".1em", marginBottom: 8 }}>HOW TO EXPORT FROM TRADOVATE</p>
-              <ol style={{ fontSize: 11, color: "#555", lineHeight: 1.8, paddingLeft: 16, margin: 0 }}>
+              <ol style={{ fontSize: 11, color: "#ccc", lineHeight: 1.8, paddingLeft: 16, margin: 0 }}>
                 <li>Open Tradovate &rarr; click your account name dropdown</li>
-                <li>Click the gear icon &rarr; <b style={{ color: "#777" }}>Account Reports</b></li>
+                <li>Click the gear icon &rarr; <b style={{ color: "#eee" }}>Account Reports</b></li>
                 <li>Go to the <b style={{ color: "#7fffb2" }}>Orders</b> tab (not Performance)</li>
-                <li>Select your date range &rarr; click <b style={{ color: "#777" }}>Download Report</b></li>
+                <li>Select your date range &rarr; click <b style={{ color: "#eee" }}>Download Report</b></li>
                 <li>Drop the downloaded CSV file here</li>
               </ol>
             </div>
@@ -652,8 +770,8 @@ function TradingJournal() {
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 13 }}>{t.ticker}</span>
                         <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>{t.direction}</span>
-                        <span style={{ fontSize: 10, color: "#333" }}>{t.date}</span>
-                        <span style={{ fontSize: 10, color: "#444" }}>{t.size}ct</span>
+                        <span style={{ fontSize: 10, color: "#aaa" }}>{t.date}</span>
+                        <span style={{ fontSize: 10, color: "#bbb" }}>{t.size}ct</span>
                       </div>
                       <span className={t.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 13 }}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</span>
                     </div>
@@ -684,7 +802,7 @@ function TradingJournal() {
           <div className="modal" style={{ filter: isDark ? "none" : "invert(1) hue-rotate(180deg)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
               <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 17, color: "#fff" }}>Log Futures Trade</p>
-              <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "#333", cursor: "pointer", fontSize: 24 }}>\u00D7</button>
+              <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>\u00D7</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div><span className="lbl">Date</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} /></div>
@@ -693,13 +811,13 @@ function TradingJournal() {
                 <select value={form.market} onChange={e => setForm(p => ({ ...p, market: e.target.value, ticker: e.target.value }))}>
                   {INSTRUMENTS.map(i => <option key={i}>{i}</option>)}
                 </select>
-                {form.market && POINT_VALUES[form.market] && <p style={{ fontSize: 9, color: "#333", marginTop: 4 }}>Point value: ${POINT_VALUES[form.market]?.toLocaleString()}/pt</p>}
+                {form.market && POINT_VALUES[form.market] && <p style={{ fontSize: 9, color: "#aaa", marginTop: 4 }}>Point value: ${POINT_VALUES[form.market]?.toLocaleString()}/pt</p>}
               </div>
               <div>
                 <span className="lbl">Direction</span>
                 <div style={{ display: "flex", gap: 6 }}>
                   {["Long", "Short"].map(d => (
-                    <button key={d} onClick={() => setForm(p => ({ ...p, direction: d }))} style={{ flex: 1, padding: "8px", border: `1px solid ${form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#181828"}`, borderRadius: 4, background: form.direction === d ? (d === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)") : "none", color: form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#555", cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 12, letterSpacing: ".05em" }}>{d}</button>
+                    <button key={d} onClick={() => setForm(p => ({ ...p, direction: d }))} style={{ flex: 1, padding: "8px", border: `1px solid ${form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#181828"}`, borderRadius: 4, background: form.direction === d ? (d === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)") : "none", color: form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#ccc", cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 12, letterSpacing: ".05em" }}>{d}</button>
                   ))}
                 </div>
               </div>
@@ -724,7 +842,7 @@ function TradingJournal() {
                   {EMOTIONS.map(e => {
                     const col = emotionColors[e] || "#888";
                     return (
-                      <button key={e} onClick={() => setForm(p => ({ ...p, emotion: e }))} style={{ padding: "4px 9px", border: `1px solid ${form.emotion === e ? col : "#1a1a2a"}`, borderRadius: 4, background: form.emotion === e ? `${col}18` : "none", color: form.emotion === e ? col : "#444", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{e}</button>
+                      <button key={e} onClick={() => setForm(p => ({ ...p, emotion: e }))} style={{ padding: "4px 9px", border: `1px solid ${form.emotion === e ? col : "#1a1a2a"}`, borderRadius: 4, background: form.emotion === e ? `${col}18` : "none", color: form.emotion === e ? col : "#bbb", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{e}</button>
                     );
                   })}
                 </div>
@@ -738,8 +856,8 @@ function TradingJournal() {
             {previewPnl !== null && (
               <div style={{ margin: "16px 0", padding: "12px 16px", background: "#09090f", borderRadius: 6, border: `1px solid ${previewPnl >= 0 ? "#7fffb222" : "#ff446622"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <p style={{ fontSize: 9, color: "#333", letterSpacing: ".1em", marginBottom: 3 }}>ESTIMATED P&L</p>
-                  <p style={{ fontSize: 10, color: "#252540" }}>{Math.abs((+form.exit) - (+form.entry)).toFixed(2)} pts \u00D7 {form.size}ct \u00D7 ${POINT_VALUES[form.market]}</p>
+                  <p style={{ fontSize: 9, color: "#aaa", letterSpacing: ".1em", marginBottom: 3 }}>ESTIMATED P&L</p>
+                  <p style={{ fontSize: 10, color: "#9595b0" }}>{Math.abs((+form.exit) - (+form.entry)).toFixed(2)} pts \u00D7 {form.size}ct \u00D7 ${POINT_VALUES[form.market]}</p>
                 </div>
                 <p style={{ fontFamily: "Syne,sans-serif", fontSize: 22, fontWeight: 700 }} className={previewPnl >= 0 ? "pos" : "neg"}>{previewPnl >= 0 ? "+" : ""}${previewPnl.toLocaleString()}</p>
               </div>
@@ -754,7 +872,7 @@ function TradingJournal() {
         <div onClick={() => setDeleteConfirm(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 420, width: "90%" }}>
             <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Delete Trade?</p>
-            <p style={{ fontSize: 12, color: "#666", marginBottom: 24, lineHeight: 1.6 }}>This action cannot be undone. The trade will be permanently removed from your journal.</p>
+            <p style={{ fontSize: 12, color: "#ddd", marginBottom: 24, lineHeight: 1.6 }}>This action cannot be undone. The trade will be permanently removed from your journal.</p>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setDeleteConfirm(null)} style={{ flex: 1 }}>Cancel</button>
               <button onClick={() => deleteTrade(deleteConfirm)} style={{ flex: 1, background: "#ff4466", border: "none", color: "#fff", padding: "10px 20px", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 11, letterSpacing: ".08em", fontWeight: 500 }}>Delete</button>
