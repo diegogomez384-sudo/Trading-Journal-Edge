@@ -18,6 +18,23 @@ function calcPnl(trade) {
   return parseFloat((diff * trade.size * (POINT_VALUES[trade.market] || 50)).toFixed(2));
 }
 
+function formatDateToYMD(dateString) {
+  if (!dateString) return "";
+
+  // Try to parse and convert to YYYY-MM-DD format
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Return original if invalid
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return dateString;
+  }
+}
+
 function detectSession(timestamp) {
   const date = new Date(timestamp);
   const etString = date.toLocaleString("en-US", { timeZone: "America/New_York" });
@@ -101,7 +118,7 @@ function parseTradovateCsv(text) {
 
         const trade = {
           id: `csv-${Date.now()}-${trades.length}`,
-          date: entryTime ? entryTime.split("T")[0].split(" ")[0] : "",
+          date: formatDateToYMD(entryTime),
           ticker: market,
           market,
           direction,
@@ -144,7 +161,15 @@ function TradingJournal() {
   const [trades, setTrades] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalTrades');
-      return saved ? JSON.parse(saved) : initialTrades;
+      let loadedTrades = saved ? JSON.parse(saved) : initialTrades;
+
+      // Migrate old date formats to YYYY-MM-DD
+      loadedTrades = loadedTrades.map(trade => ({
+        ...trade,
+        date: formatDateToYMD(trade.date)
+      }));
+
+      return loadedTrades;
     } catch (error) {
       console.error('Failed to load trades from localStorage:', error);
       return initialTrades;
@@ -562,7 +587,16 @@ function TradingJournal() {
                   // Group trades by date
                   const tradesByDate = {};
                   trades.forEach(t => {
-                    const dateKey = t.date; // YYYY-MM-DD format
+                    // Normalize date to YYYY-MM-DD format
+                    let dateKey = t.date;
+                    if (dateKey && dateKey.includes('T')) {
+                      dateKey = dateKey.split('T')[0];
+                    }
+                    if (dateKey && dateKey.includes(' ')) {
+                      dateKey = dateKey.split(' ')[0];
+                    }
+                    if (!dateKey) return;
+
                     if (!tradesByDate[dateKey]) {
                       tradesByDate[dateKey] = [];
                     }
