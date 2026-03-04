@@ -273,6 +273,10 @@ function TradingJournal() {
   // --- Delete state ---
   const [deleteConfirm, setDeleteConfirm] = useState(null); // trade id to delete
 
+  // --- Edit strategy state ---
+  const [editStrategyTrade, setEditStrategyTrade] = useState(null); // trade being edited
+  const [editStrategyValue, setEditStrategyValue] = useState("");
+
   function handleCsvFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -362,6 +366,22 @@ function TradingJournal() {
 
   function deleteCustomStrategy(strategy) {
     setCustomStrategies(prev => prev.filter(s => s !== strategy));
+  }
+
+  function openEditStrategy(trade) {
+    setEditStrategyTrade(trade);
+    setEditStrategyValue(trade.strategy);
+  }
+
+  function saveEditStrategy() {
+    if (!editStrategyTrade || !editStrategyValue) return;
+    setTrades(prev => prev.map(t =>
+      t.id === editStrategyTrade.id
+        ? { ...t, strategy: editStrategyValue }
+        : t
+    ));
+    setEditStrategyTrade(null);
+    setEditStrategyValue("");
   }
 
   // Combined strategy list (default + custom)
@@ -478,7 +498,10 @@ function TradingJournal() {
                     </div>
                     <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      <span className="tag" style={{ background: "#111120", color: "#ccc" }}>{t.strategy}</span>
+                      <span className="tag" onClick={(e) => { e.stopPropagation(); openEditStrategy(t); }} style={{ background: "#111120", color: "#ccc", cursor: "pointer", position: "relative" }} title="Click to edit strategy">
+                        {t.strategy}
+                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
+                      </span>
                       <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14` }}>{t.emotion}</span>
                       <span className="tag" style={{ background: "#111120", color: "#bbb", fontSize: 9 }}>{t.session}</span>
                     </div>
@@ -515,7 +538,10 @@ function TradingJournal() {
                       </div>
                       <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
                       <span style={{ fontSize: 10, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
-                      <span style={{ fontSize: 11, color: "#ccc", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.strategy}</span>
+                      <span style={{ fontSize: 11, color: "#ccc", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); openEditStrategy(t); }} title="Click to edit strategy">
+                        {t.strategy}
+                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
+                      </span>
                       <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.emotion}</span>
                       <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
@@ -1022,6 +1048,33 @@ function TradingJournal() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT STRATEGY MODAL */}
+      {editStrategyTrade && (
+        <div onClick={() => setEditStrategyTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 450, width: "90%" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Edit Strategy</p>
+              <button onClick={() => setEditStrategyTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>
+                Trade: <span style={{ color: "#fff", fontWeight: 600 }}>{editStrategyTrade.ticker}</span> | {formatDateDisplay(editStrategyTrade.date)}
+                {editStrategyTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
+              </p>
+              <p className="lbl" style={{ marginBottom: 8 }}>Strategy</p>
+              <select value={editStrategyValue} onChange={e => setEditStrategyValue(e.target.value)} style={{ width: "100%", marginBottom: 16 }}>
+                {allStrategies.map(s => <option key={s}>{s}</option>)}
+              </select>
+              <p style={{ fontSize: 11, color: "#666", fontStyle: "italic" }}>You can also create custom strategies from the "Manage" button in the trade form.</p>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setEditStrategyTrade(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="gbtn" onClick={saveEditStrategy} style={{ flex: 1 }}>Save Changes</button>
+            </div>
           </div>
         </div>
       )}
