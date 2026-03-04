@@ -140,10 +140,26 @@ const initialTrades = [
 ];
 
 function TradingJournal() {
-  const [trades, setTrades] = useState(initialTrades);
+  // Load trades from localStorage or use initial trades
+  const [trades, setTrades] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalTrades');
+      return saved ? JSON.parse(saved) : initialTrades;
+    } catch (error) {
+      console.error('Failed to load trades from localStorage:', error);
+      return initialTrades;
+    }
+  });
   const [view, setView] = useState("dashboard");
   const [showForm, setShowForm] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalTheme');
+      return saved ? JSON.parse(saved) : true;
+    } catch (error) {
+      return true;
+    }
+  });
   const [aiLoading, setAiLoading] = useState(false);
   const [aiReport, setAiReport] = useState("");
   const [aiError, setAiError] = useState("");
@@ -151,6 +167,24 @@ function TradingJournal() {
   const [tradeAi, setTradeAi] = useState({});
   const [filterSession, setFilterSession] = useState("All");
   const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
+
+  // Save trades to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalTrades', JSON.stringify(trades));
+    } catch (error) {
+      console.error('Failed to save trades to localStorage:', error);
+    }
+  }, [trades]);
+
+  // Save theme preference to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalTheme', JSON.stringify(isDark));
+    } catch (error) {
+      console.error('Failed to save theme to localStorage:', error);
+    }
+  }, [isDark]);
 
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
