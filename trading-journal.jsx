@@ -21,7 +21,18 @@ function calcPnl(trade) {
 function formatDateToYMD(dateString) {
   if (!dateString) return "";
 
-  // Try to parse and convert to YYYY-MM-DD format
+  // If already in YYYY-MM-DD format, return as-is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  // Handle MM/DD/YYYY format
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) {
+    const [month, day, year] = dateString.split('/');
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  // Try to parse other formats
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString; // Return original if invalid
@@ -33,6 +44,16 @@ function formatDateToYMD(dateString) {
   } catch {
     return dateString;
   }
+}
+
+function formatDateDisplay(dateString) {
+  // Convert YYYY-MM-DD to MM/DD/YYYY for display
+  if (!dateString) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    const [year, month, day] = dateString.split('-');
+    return `${month}/${day}/${year}`;
+  }
+  return dateString;
 }
 
 function detectSession(timestamp) {
@@ -309,7 +330,7 @@ function TradingJournal() {
         body { background: ${isDark ? "#06060d" : "#f9f9f2"}; margin: 0; }
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#1e1e30;border-radius:2px;}
-        .nb{background:none;border:none;cursor:pointer;padding:8px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .2s;color:#3a3a5a;text-transform:uppercase;}
+        .nb{background:none;border:none;cursor:pointer;padding:8px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .2s;color:#8a8aa8;text-transform:uppercase;}
         .nb.on{color:#7fffb2;background:rgba(127,255,178,.07);}
         .nb:hover{color:#d8d8ec;}
         .card{background:#0c0c16;border:1px solid #181828;border-radius:8px;padding:20px;}
@@ -317,7 +338,7 @@ function TradingJournal() {
         .gbtn:hover{background:#5de89a;transform:translateY(-1px);}
         .gbtn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
         .ghost{background:none;border:1px solid #222235;color:#ccc;cursor:pointer;padding:6px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;transition:all .2s;text-transform:uppercase;}
-        .ghost:hover{border-color:#7fffb2;color:#7fffb2;}
+        .ghost:hover{border-color:#5de89a;color:#5de89a;}
         input,select,textarea{background:#0a0a14;border:1px solid #181828;color:#d8d8ec;padding:8px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;width:100%;transition:border .2s;outline:none;}
         input:focus,select:focus,textarea:focus{border-color:#7fffb2;}
         select option{background:#0a0a14;}
@@ -347,7 +368,7 @@ function TradingJournal() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="10" width="4" height="10" fill="#7fffb2" rx="1" /><rect x="9" y="5" width="4" height="15" fill="#7fffb2" opacity=".7" rx="1" /><rect x="16" y="1" width="4" height="19" fill="#7fffb2" opacity=".4" rx="1" /></svg>
             <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>EDGE</span>
-            <span style={{ color: "#1e1e38", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
+            <span style={{ color: "#6c6c8c", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
             {[["dashboard", "Dashboard"], ["trades", "Trades"], ["calendar", "Calendar"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
@@ -405,7 +426,7 @@ function TradingJournal() {
                         {t.ticker}
                         {t.source === "csv" && <span className="tv-badge">CSV</span>}
                       </p>
-                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>{t.date}</p>
+                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>{formatDateDisplay(t.date)}</p>
                     </div>
                     <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
@@ -442,7 +463,7 @@ function TradingJournal() {
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </p>
-                        <p style={{ fontSize: 9, color: "#9595b0" }}>{t.date}</p>
+                        <p style={{ fontSize: 9, color: "#9595b0" }}>{formatDateDisplay(t.date)}</p>
                       </div>
                       <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
                       <span style={{ fontSize: 10, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
@@ -565,7 +586,7 @@ function TradingJournal() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <div>
                   <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Trading Calendar</p>
-                  <p style={{ color: "#555", fontSize: 11, letterSpacing: ".05em" }}>Daily performance breakdown</p>
+                  <p style={{ color: "#999", fontSize: 11, letterSpacing: ".05em" }}>Daily performance breakdown</p>
                 </div>
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>←</button>
@@ -722,7 +743,7 @@ function TradingJournal() {
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </span>
-                        <span style={{ fontSize: 10, color: "#9595b0" }}>{t.date}</span>
+                        <span style={{ fontSize: 10, color: "#9595b0" }}>{formatDateDisplay(t.date)}</span>
                         <span className="tag" style={{ background: "#111120", color: "#ccc" }}>{t.strategy}</span>
                         <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12` }}>{t.emotion}</span>
                         <span className="tag" style={{ background: "#111120", color: "#aaa", fontSize: 9 }}>{t.session}</span>
