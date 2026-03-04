@@ -143,6 +143,7 @@ function TradingJournal() {
   const [trades, setTrades] = useState(initialTrades);
   const [view, setView] = useState("dashboard");
   const [showForm, setShowForm] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiReport, setAiReport] = useState("");
   const [aiError, setAiError] = useState("");
@@ -194,7 +195,7 @@ function TradingJournal() {
   const maxDD = (() => { let peak = 0, mdd = 0, run = 0; trades.slice().reverse().forEach(t => { run += t.pnl; if (run > peak) peak = run; const d = peak - run; if (d > mdd) mdd = d; }); return mdd; })();
 
   const filtered = filterSession === "All" ? trades : trades.filter(t => t.session === filterSession);
-  const cumPnl = trades.slice().reverse().reduce((acc, t) => { acc.push((acc.length ? acc[acc.length-1] : 0) + t.pnl); return acc; }, []);
+  const cumPnl = trades.slice().reverse().reduce((acc, t) => { acc.push((acc.length ? acc[acc.length - 1] : 0) + t.pnl); return acc; }, []);
   const maxCum = Math.max(...cumPnl.map(Math.abs), 1);
 
   const previewPnl = form.entry && form.exit && form.size ? calcPnl({ ...form, entry: +form.entry, exit: +form.exit, size: +form.size }) : null;
@@ -233,9 +234,10 @@ function TradingJournal() {
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
   return (
-    <div style={{ fontFamily: "'DM Mono','Courier New',monospace", background: "#06060d", minHeight: "100vh", color: "#d8d8ec" }}>
+    <div style={{ fontFamily: "'DM Mono','Courier New',monospace", background: isDark ? "#06060d" : "#f9f9f2", minHeight: "100vh", color: "#d8d8ec" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@700;800&display=swap');
+        body { background: ${isDark ? "#06060d" : "#f9f9f2"}; margin: 0; }
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#1e1e30;border-radius:2px;}
         .nb{background:none;border:none;cursor:pointer;padding:8px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .2s;color:#3a3a5a;text-transform:uppercase;}
@@ -263,285 +265,294 @@ function TradingJournal() {
         .tv-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;letter-spacing:.1em;background:rgba(0,221,255,.1);color:#00ddff;margin-left:6px;vertical-align:middle;}
       `}</style>
 
-      {/* HEADER */}
-      <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="10" width="4" height="10" fill="#7fffb2" rx="1"/><rect x="9" y="5" width="4" height="15" fill="#7fffb2" opacity=".7" rx="1"/><rect x="16" y="1" width="4" height="19" fill="#7fffb2" opacity=".4" rx="1"/></svg>
-          <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>EDGE</span>
-          <span style={{ color: "#1e1e38", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
-        </div>
-        <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-          {[["dashboard","Dashboard"],["trades","Trades"],["analytics","Analytics"],["ai-coach","AI Coach"]].map(([v, l]) => (
-            <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
-          ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button className="ghost" onClick={() => { setShowImport(true); setImportResult(null); setImportPreview(null); }}>Import CSV</button>
-          <button className="gbtn" onClick={() => setShowForm(true)}>+ Log Trade</button>
-        </div>
+      {/* THEME TOGGLE */}
+      <div style={{ position: "fixed", bottom: 24, left: 24, zIndex: 100 }}>
+        <button className="ghost" onClick={() => setIsDark(d => !d)} style={{ width: 44, height: 44, borderRadius: "50%", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", background: isDark ? "#111120" : "#ffffff", border: `1px solid ${isDark ? "#222235" : "#e0e0e0"}`, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontSize: 20 }}>
+          {isDark ? "☀️" : "🌙"}
+        </button>
       </div>
 
-      <div style={{ padding: "24px 28px", maxWidth: 1120, margin: "0 auto" }}>
-
-        {/* DASHBOARD */}
-        {view === "dashboard" && (
-          <div>
-            <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-            <p style={{ color: "#252540", fontSize: 11, letterSpacing: ".05em", marginBottom: 22 }}>{trades.length} trades logged</p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
-              {[
-                { l: "Net P&L", v: `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`, pos: totalPnl >= 0, big: true },
-                { l: "Win Rate", v: `${winRate}%`, pos: winRate >= 50 },
-                { l: "Profit Factor", v: profitFactor, pos: parseFloat(profitFactor) >= 1.5 },
-                { l: "Avg Win", v: `+$${avgWin.toFixed(0)}`, pos: true },
-                { l: "Max Drawdown", v: `-$${maxDD.toFixed(0)}`, pos: false },
-              ].map(s => (
-                <div key={s.l} style={{ background: "#090912", border: "1px solid #131325", borderRadius: 6, padding: "14px 16px" }}>
-                  <p className="lbl" style={{ marginBottom: 8 }}>{s.l}</p>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: s.big ? 22 : 18, fontWeight: 700, color: s.pos ? "#7fffb2" : "#ff4466" }}>{s.v}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="card" style={{ marginBottom: 16 }}>
-              <p className="lbl" style={{ marginBottom: 10 }}>Equity Curve</p>
-              <div style={{ height: 72, display: "flex", alignItems: "flex-end", gap: 3 }}>
-                {cumPnl.map((v, i) => {
-                  const h = Math.max(3, (Math.abs(v) / maxCum) * 66);
-                  return <div key={i} style={{ flex: 1, height: h, borderRadius: "2px 2px 0 0", background: v >= 0 ? "#7fffb2" : "#ff4466", opacity: .7 }} />;
-                })}
-              </div>
-            </div>
-
-            <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <p className="lbl" style={{ margin: 0 }}>Recent Trades</p>
-                <button className="ghost" onClick={() => setView("trades")}>View All \u2192</button>
-              </div>
-              {trades.slice(0, 6).map(t => (
-                <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
-                  <div>
-                    <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                      {t.ticker}
-                      {t.source === "csv" && <span className="tv-badge">CSV</span>}
-                    </p>
-                    <p style={{ fontSize: 10, color: "#2a2a45" }}>{t.date}</p>
-                  </div>
-                  <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
-                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    <span className="tag" style={{ background: "#111120", color: "#555" }}>{t.strategy}</span>
-                    <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14` }}>{t.emotion}</span>
-                    <span className="tag" style={{ background: "#111120", color: "#444", fontSize: 9 }}>{t.session}</span>
-                  </div>
-                  <span style={{ fontSize: 11, color: "#33334a" }}>{t.size}ct</span>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
+      <div style={{ background: "#06060d", minHeight: "100vh", filter: isDark ? "none" : "invert(1) hue-rotate(180deg)", transition: "filter 0.3s ease" }}>
+        {/* HEADER */}
+        <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="10" width="4" height="10" fill="#7fffb2" rx="1" /><rect x="9" y="5" width="4" height="15" fill="#7fffb2" opacity=".7" rx="1" /><rect x="16" y="1" width="4" height="19" fill="#7fffb2" opacity=".4" rx="1" /></svg>
+            <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>EDGE</span>
+            <span style={{ color: "#1e1e38", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
           </div>
-        )}
+          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
+              <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button className="ghost" onClick={() => { setShowImport(true); setImportResult(null); setImportPreview(null); }}>Import CSV</button>
+            <button className="gbtn" onClick={() => setShowForm(true)}>+ Log Trade</button>
+          </div>
+        </div>
 
-        {/* TRADES */}
-        {view === "trades" && (
-          <div>
-            <div style={{ display: "flex", gap: 5, marginBottom: 18, flexWrap: "wrap" }}>
-              {["All", ...SESSIONS].map(s => (
-                <button key={s} className={`nb ${filterSession === s ? "on" : ""}`} style={{ border: "1px solid #181828" }} onClick={() => setFilterSession(s)}>{s}</button>
-              ))}
-            </div>
-            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                {["Ticker","Dir","Session","Strategy","Emotion","Cts","Entry","Exit","P&L"].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+        <div style={{ padding: "24px 28px", maxWidth: 1120, margin: "0 auto" }}>
+
+          {/* DASHBOARD */}
+          {view === "dashboard" && (
+            <div>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+              <p style={{ color: "#252540", fontSize: 11, letterSpacing: ".05em", marginBottom: 22 }}>{trades.length} trades logged</p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
+                {[
+                  { l: "Net P&L", v: `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`, pos: totalPnl >= 0, big: true },
+                  { l: "Win Rate", v: `${winRate}%`, pos: winRate >= 50 },
+                  { l: "Profit Factor", v: profitFactor, pos: parseFloat(profitFactor) >= 1.5 },
+                  { l: "Avg Win", v: `+$${avgWin.toFixed(0)}`, pos: true },
+                  { l: "Max Drawdown", v: `-$${maxDD.toFixed(0)}`, pos: false },
+                ].map(s => (
+                  <div key={s.l} style={{ background: "#090912", border: "1px solid #131325", borderRadius: 6, padding: "14px 16px" }}>
+                    <p className="lbl" style={{ marginBottom: 8 }}>{s.l}</p>
+                    <p style={{ fontFamily: "Syne,sans-serif", fontSize: s.big ? 22 : 18, fontWeight: 700, color: s.pos ? "#7fffb2" : "#ff4466" }}>{s.v}</p>
+                  </div>
+                ))}
               </div>
-              {filtered.map(t => (
-                <div key={t.id}>
-                  <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "13px 20px", alignItems: "center" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>
+
+              <div className="card" style={{ marginBottom: 16 }}>
+                <p className="lbl" style={{ marginBottom: 10 }}>Equity Curve</p>
+                <div style={{ height: 72, display: "flex", alignItems: "flex-end", gap: 3 }}>
+                  {cumPnl.map((v, i) => {
+                    const h = Math.max(3, (Math.abs(v) / maxCum) * 66);
+                    return <div key={i} style={{ flex: 1, height: h, borderRadius: "2px 2px 0 0", background: v >= 0 ? "#7fffb2" : "#ff4466", opacity: .7 }} />;
+                  })}
+                </div>
+              </div>
+
+              <div className="card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <p className="lbl" style={{ margin: 0 }}>Recent Trades</p>
+                  <button className="ghost" onClick={() => setView("trades")}>View All \u2192</button>
+                </div>
+                {trades.slice(0, 6).map(t => (
+                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
                     <div>
-                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
                         {t.ticker}
                         {t.source === "csv" && <span className="tv-badge">CSV</span>}
                       </p>
-                      <p style={{ fontSize: 9, color: "#252540" }}>{t.date}</p>
+                      <p style={{ fontSize: 10, color: "#2a2a45" }}>{t.date}</p>
                     </div>
                     <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
-                    <span style={{ fontSize: 10, color: "#444" }}>{t.session.replace("RTH ", "")}</span>
-                    <span style={{ fontSize: 11, color: "#555" }}>{t.strategy}</span>
-                    <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content" }}>{t.emotion}</span>
-                    <span style={{ fontSize: 12, color: "#444" }}>{t.size}</span>
-                    <span style={{ fontSize: 12, color: "#777" }}>{t.entry}</span>
-                    <span style={{ fontSize: 12, color: "#777" }}>{t.exit}</span>
-                    <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
-                  </div>
-                  {expandedTrade === t.id && (
-                    <div style={{ padding: "14px 20px", background: "#09090f", borderBottom: "1px solid #0f0f1e" }}>
-                      <p style={{ fontSize: 12, color: "#555", marginBottom: 10, fontStyle: "italic" }}>{t.notes || "No notes recorded."}</p>
-                      <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#333", marginBottom: 12 }}>
-                        <span>Point value: <span style={{ color: "#666" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
-                        <span>Move: <span style={{ color: "#666" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
-                        <span>Side: <span style={{ color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>{t.direction}</span></span>
-                        {t.source === "csv" && <span style={{ color: "#00ddff" }}>CSV Import</span>}
-                      </div>
-
-                      {!tradeAi[t.id] && <button className="ghost" onClick={(e) => { e.stopPropagation(); analyzeOne(t); }}>AI Analysis</button>}
-                      {tradeAi[t.id]?.loading && <p style={{ fontSize: 11, color: "#7fffb2" }} className="pulse">Analyzing trade...</p>}
-                      {tradeAi[t.id]?.text && (
-                        <div style={{ marginTop: 12, padding: 16, background: "#0c0c18", borderRadius: 6, border: "1px solid #1e1e30" }}>
-                          <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em", marginBottom: 10 }}>AI COACHING</p>
-                          <p className="ai-text">{tradeAi[t.id].text}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ANALYTICS */}
-        {view === "analytics" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div className="card">
-              <p className="lbl" style={{ marginBottom: 16 }}>Strategy Performance</p>
-              {stratPerf.map(s => {
-                const max = Math.max(...stratPerf.map(x => Math.abs(x.pnl)), 1);
-                return (
-                  <div key={s.name} style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12 }}>{s.name}</span>
-                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                        <span style={{ fontSize: 10, color: "#333" }}>{s.wr}% WR \u00B7 {s.count}t</span>
-                        <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div style={{ background: "#111120", borderRadius: 3, height: 4 }}>
-                      <div style={{ width: `${(Math.abs(s.pnl) / max) * 100}%`, height: 4, borderRadius: 3, background: s.pnl >= 0 ? "linear-gradient(90deg,#7fffb2,#00cc66)" : "linear-gradient(90deg,#ff4466,#cc2244)" }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="card">
-              <p className="lbl" style={{ marginBottom: 16 }}>Emotion \u2192 P&L</p>
-              {emotPerf.map(e => {
-                const max = Math.max(...emotPerf.map(x => Math.abs(x.pnl)), 1);
-                const col = emotionColors[e.name] || "#888";
-                return (
-                  <div key={e.name} style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, color: col }}>{e.name}</span>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span style={{ fontSize: 10, color: "#333" }}>{e.count}t</span>
-                        <span className={e.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{e.pnl >= 0 ? "+" : ""}${e.pnl.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div style={{ background: "#111120", borderRadius: 3, height: 4 }}>
-                      <div style={{ width: `${(Math.abs(e.pnl) / max) * 100}%`, height: 4, borderRadius: 3, background: e.pnl >= 0 ? col : "#ff4466" }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="card">
-              <p className="lbl" style={{ marginBottom: 16 }}>Session Breakdown</p>
-              {sessPerf.map(s => (
-                <div key={s.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1e" }}>
-                  <span style={{ fontSize: 12 }}>{s.name}</span>
-                  <span style={{ fontSize: 11, color: "#333" }}>{s.count} trades</span>
-                  <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="card">
-              <p className="lbl" style={{ marginBottom: 16 }}>Risk Metrics</p>
-              {[
-                ["Total Trades", trades.length],
-                ["Win Rate", `${winRate}%`],
-                ["Profit Factor", profitFactor],
-                ["Avg Win", `$${avgWin.toFixed(0)}`],
-                ["Avg Loss", `-$${avgLoss.toFixed(0)}`],
-                ["Win/Loss Ratio", avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : "\u221e"],
-                ["Max Drawdown", `-$${maxDD.toFixed(0)}`],
-                ["Net P&L", `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`],
-              ].map(([l, v]) => (
-                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #0c0c1c" }}>
-                  <span style={{ fontSize: 12, color: "#444" }}>{l}</span>
-                  <span style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 600, color: "#d8d8ec" }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* AI COACH */}
-        {view === "ai-coach" && (
-          <div>
-            <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
-            <p style={{ color: "#333", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
-
-            <div className="card" style={{ marginBottom: 20 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: aiReport || aiLoading || aiError ? 20 : 0 }}>
-                <div>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#fff", marginBottom: 5 }}>Full Portfolio Review</p>
-                  <p style={{ fontSize: 12, color: "#333" }}>Analyzes all {trades.length} trades \u2014 strategy edge, psychology, session timing & risk</p>
-                </div>
-                <button className="gbtn" onClick={runAnalysis} disabled={aiLoading}>{aiLoading ? "Analyzing..." : "Run Analysis"}</button>
-              </div>
-              {aiLoading && <div style={{ padding: 20, background: "#09090f", borderRadius: 6, textAlign: "center" }}><p style={{ color: "#7fffb2", fontSize: 12 }} className="pulse">Claude is reviewing your trading journal...</p></div>}
-              {aiError && <p style={{ color: "#ff4466", fontSize: 12 }}>{aiError}</p>}
-              {aiReport && (
-                <div style={{ padding: 20, background: "#09090f", borderRadius: 6, border: "1px solid #7fffb218" }}>
-                  <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 14 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#7fffb2", boxShadow: "0 0 6px #7fffb2" }} />
-                    <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em" }}>AI ANALYSIS COMPLETE</p>
-                  </div>
-                  <p className="ai-text">{aiReport}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <p className="lbl" style={{ marginBottom: 4 }}>Trade-by-Trade Coaching</p>
-              <p style={{ fontSize: 11, color: "#252540", marginBottom: 16 }}>Get specific AI feedback on execution, psychology & improvement for each trade.</p>
-              {trades.map(t => (
-                <div key={t.id} style={{ padding: "12px 0", borderBottom: "1px solid #0f0f1e" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                        {t.ticker}
-                        {t.source === "csv" && <span className="tv-badge">CSV</span>}
-                      </span>
-                      <span style={{ fontSize: 10, color: "#252540" }}>{t.date}</span>
+                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                       <span className="tag" style={{ background: "#111120", color: "#555" }}>{t.strategy}</span>
-                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12` }}>{t.emotion}</span>
-                      <span className="tag" style={{ background: "#111120", color: "#333", fontSize: 9 }}>{t.session}</span>
+                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14` }}>{t.emotion}</span>
+                      <span className="tag" style={{ background: "#111120", color: "#444", fontSize: 9 }}>{t.session}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                      <span className={t.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</span>
-                      {!tradeAi[t.id] && <button className="ghost" onClick={() => analyzeOne(t)}>Analyze</button>}
-                      {tradeAi[t.id]?.loading && <span style={{ fontSize: 10, color: "#7fffb2" }} className="pulse">Thinking...</span>}
-                    </div>
+                    <span style={{ fontSize: 11, color: "#33334a" }}>{t.size}ct</span>
+                    <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
                   </div>
-                  {tradeAi[t.id]?.text && (
-                    <div style={{ marginTop: 10, padding: 14, background: "#09090f", borderRadius: 6, border: "1px solid #181828" }}>
-                      <p className="ai-text">{tradeAi[t.id].text}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* TRADES */}
+          {view === "trades" && (
+            <div>
+              <div style={{ display: "flex", gap: 5, marginBottom: 18, flexWrap: "wrap" }}>
+                {["All", ...SESSIONS].map(s => (
+                  <button key={s} className={`nb ${filterSession === s ? "on" : ""}`} style={{ border: "1px solid #181828" }} onClick={() => setFilterSession(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
+                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L"].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                </div>
+                {filtered.map(t => (
+                  <div key={t.id}>
+                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "13px 20px", alignItems: "center" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>
+                      <div>
+                        <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
+                          {t.ticker}
+                          {t.source === "csv" && <span className="tv-badge">CSV</span>}
+                        </p>
+                        <p style={{ fontSize: 9, color: "#252540" }}>{t.date}</p>
+                      </div>
+                      <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
+                      <span style={{ fontSize: 10, color: "#444" }}>{t.session.replace("RTH ", "")}</span>
+                      <span style={{ fontSize: 11, color: "#555" }}>{t.strategy}</span>
+                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content" }}>{t.emotion}</span>
+                      <span style={{ fontSize: 12, color: "#444" }}>{t.size}</span>
+                      <span style={{ fontSize: 12, color: "#777" }}>{t.entry}</span>
+                      <span style={{ fontSize: 12, color: "#777" }}>{t.exit}</span>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                    </div>
+                    {expandedTrade === t.id && (
+                      <div style={{ padding: "14px 20px", background: "#09090f", borderBottom: "1px solid #0f0f1e" }}>
+                        <p style={{ fontSize: 12, color: "#555", marginBottom: 10, fontStyle: "italic" }}>{t.notes || "No notes recorded."}</p>
+                        <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#333", marginBottom: 12 }}>
+                          <span>Point value: <span style={{ color: "#666" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
+                          <span>Move: <span style={{ color: "#666" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
+                          <span>Side: <span style={{ color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>{t.direction}</span></span>
+                          {t.source === "csv" && <span style={{ color: "#00ddff" }}>CSV Import</span>}
+                        </div>
+
+                        {!tradeAi[t.id] && <button className="ghost" onClick={(e) => { e.stopPropagation(); analyzeOne(t); }}>AI Analysis</button>}
+                        {tradeAi[t.id]?.loading && <p style={{ fontSize: 11, color: "#7fffb2" }} className="pulse">Analyzing trade...</p>}
+                        {tradeAi[t.id]?.text && (
+                          <div style={{ marginTop: 12, padding: 16, background: "#0c0c18", borderRadius: 6, border: "1px solid #1e1e30" }}>
+                            <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em", marginBottom: 10 }}>AI COACHING</p>
+                            <p className="ai-text">{tradeAi[t.id].text}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ANALYTICS */}
+          {view === "analytics" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Strategy Performance</p>
+                {stratPerf.map(s => {
+                  const max = Math.max(...stratPerf.map(x => Math.abs(x.pnl)), 1);
+                  return (
+                    <div key={s.name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12 }}>{s.name}</span>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                          <span style={{ fontSize: 10, color: "#333" }}>{s.wr}% WR \u00B7 {s.count}t</span>
+                          <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div style={{ background: "#111120", borderRadius: 3, height: 4 }}>
+                        <div style={{ width: `${(Math.abs(s.pnl) / max) * 100}%`, height: 4, borderRadius: 3, background: s.pnl >= 0 ? "linear-gradient(90deg,#7fffb2,#00cc66)" : "linear-gradient(90deg,#ff4466,#cc2244)" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Emotion \u2192 P&L</p>
+                {emotPerf.map(e => {
+                  const max = Math.max(...emotPerf.map(x => Math.abs(x.pnl)), 1);
+                  const col = emotionColors[e.name] || "#888";
+                  return (
+                    <div key={e.name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: col }}>{e.name}</span>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <span style={{ fontSize: 10, color: "#333" }}>{e.count}t</span>
+                          <span className={e.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{e.pnl >= 0 ? "+" : ""}${e.pnl.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div style={{ background: "#111120", borderRadius: 3, height: 4 }}>
+                        <div style={{ width: `${(Math.abs(e.pnl) / max) * 100}%`, height: 4, borderRadius: 3, background: e.pnl >= 0 ? col : "#ff4466" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Session Breakdown</p>
+                {sessPerf.map(s => (
+                  <div key={s.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1e" }}>
+                    <span style={{ fontSize: 12 }}>{s.name}</span>
+                    <span style={{ fontSize: 11, color: "#333" }}>{s.count} trades</span>
+                    <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Risk Metrics</p>
+                {[
+                  ["Total Trades", trades.length],
+                  ["Win Rate", `${winRate}%`],
+                  ["Profit Factor", profitFactor],
+                  ["Avg Win", `$${avgWin.toFixed(0)}`],
+                  ["Avg Loss", `-$${avgLoss.toFixed(0)}`],
+                  ["Win/Loss Ratio", avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : "\u221e"],
+                  ["Max Drawdown", `-$${maxDD.toFixed(0)}`],
+                  ["Net P&L", `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`],
+                ].map(([l, v]) => (
+                  <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #0c0c1c" }}>
+                    <span style={{ fontSize: 12, color: "#444" }}>{l}</span>
+                    <span style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 600, color: "#d8d8ec" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI COACH */}
+          {view === "ai-coach" && (
+            <div>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
+              <p style={{ color: "#333", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
+
+              <div className="card" style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: aiReport || aiLoading || aiError ? 20 : 0 }}>
+                  <div>
+                    <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#fff", marginBottom: 5 }}>Full Portfolio Review</p>
+                    <p style={{ fontSize: 12, color: "#333" }}>Analyzes all {trades.length} trades \u2014 strategy edge, psychology, session timing & risk</p>
+                  </div>
+                  <button className="gbtn" onClick={runAnalysis} disabled={aiLoading}>{aiLoading ? "Analyzing..." : "Run Analysis"}</button>
+                </div>
+                {aiLoading && <div style={{ padding: 20, background: "#09090f", borderRadius: 6, textAlign: "center" }}><p style={{ color: "#7fffb2", fontSize: 12 }} className="pulse">Claude is reviewing your trading journal...</p></div>}
+                {aiError && <p style={{ color: "#ff4466", fontSize: 12 }}>{aiError}</p>}
+                {aiReport && (
+                  <div style={{ padding: 20, background: "#09090f", borderRadius: 6, border: "1px solid #7fffb218" }}>
+                    <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 14 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#7fffb2", boxShadow: "0 0 6px #7fffb2" }} />
+                      <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em" }}>AI ANALYSIS COMPLETE</p>
+                    </div>
+                    <p className="ai-text">{aiReport}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 4 }}>Trade-by-Trade Coaching</p>
+                <p style={{ fontSize: 11, color: "#252540", marginBottom: 16 }}>Get specific AI feedback on execution, psychology & improvement for each trade.</p>
+                {trades.map(t => (
+                  <div key={t.id} style={{ padding: "12px 0", borderBottom: "1px solid #0f0f1e" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
+                          {t.ticker}
+                          {t.source === "csv" && <span className="tv-badge">CSV</span>}
+                        </span>
+                        <span style={{ fontSize: 10, color: "#252540" }}>{t.date}</span>
+                        <span className="tag" style={{ background: "#111120", color: "#555" }}>{t.strategy}</span>
+                        <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12` }}>{t.emotion}</span>
+                        <span className="tag" style={{ background: "#111120", color: "#333", fontSize: 9 }}>{t.session}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <span className={t.pnl >= 0 ? "pos" : "neg"} style={{ fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</span>
+                        {!tradeAi[t.id] && <button className="ghost" onClick={() => analyzeOne(t)}>Analyze</button>}
+                        {tradeAi[t.id]?.loading && <span style={{ fontSize: 10, color: "#7fffb2" }} className="pulse">Thinking...</span>}
+                      </div>
+                    </div>
+                    {tradeAi[t.id]?.text && (
+                      <div style={{ marginTop: 10, padding: 14, background: "#09090f", borderRadius: 6, border: "1px solid #181828" }}>
+                        <p className="ai-text">{tradeAi[t.id].text}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* CSV IMPORT MODAL */}
       {showImport && (
         <div className="ov" onClick={e => { if (e.target === e.currentTarget) setShowImport(false); }}>
-          <div className="modal">
+          <div className="modal" style={{ filter: isDark ? "none" : "invert(1) hue-rotate(180deg)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
               <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 17, color: "#fff" }}>Import Tradovate CSV</p>
               <button onClick={() => setShowImport(false)} style={{ background: "none", border: "none", color: "#333", cursor: "pointer", fontSize: 24 }}>{"\u00D7"}</button>
@@ -625,7 +636,7 @@ function TradingJournal() {
       {/* LOG TRADE MODAL */}
       {showForm && (
         <div className="ov" onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
-          <div className="modal">
+          <div className="modal" style={{ filter: isDark ? "none" : "invert(1) hue-rotate(180deg)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
               <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 17, color: "#fff" }}>Log Futures Trade</p>
               <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: "#333", cursor: "pointer", fontSize: 24 }}>\u00D7</button>
@@ -642,7 +653,7 @@ function TradingJournal() {
               <div>
                 <span className="lbl">Direction</span>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {["Long","Short"].map(d => (
+                  {["Long", "Short"].map(d => (
                     <button key={d} onClick={() => setForm(p => ({ ...p, direction: d }))} style={{ flex: 1, padding: "8px", border: `1px solid ${form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#181828"}`, borderRadius: 4, background: form.direction === d ? (d === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)") : "none", color: form.direction === d ? (d === "Long" ? "#7fffb2" : "#ff4466") : "#555", cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 12, letterSpacing: ".05em" }}>{d}</button>
                   ))}
                 </div>
