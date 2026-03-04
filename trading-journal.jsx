@@ -193,6 +193,9 @@ function TradingJournal() {
   const [importPreview, setImportPreview] = useState(null); // trades to preview before confirming
   const fileInputRef = useRef(null);
 
+  // --- Delete state ---
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // trade id to delete
+
   function handleCsvFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -261,6 +264,12 @@ function TradingJournal() {
       const data = await res.json();
       setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: data.content?.map(b => b.text || "").join("") || "No response." } }));
     } catch { setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Analysis failed." } })); }
+  }
+
+  function deleteTrade(id) {
+    setTrades(prev => prev.filter(t => t.id !== id));
+    setDeleteConfirm(null);
+    setExpandedTrade(null);
   }
 
   const stratPerf = STRATEGIES.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
@@ -364,7 +373,7 @@ function TradingJournal() {
                   <button className="ghost" onClick={() => setView("trades")}>View All \u2192</button>
                 </div>
                 {trades.slice(0, 6).map(t => (
-                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
+                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px 30px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
                     <div>
                       <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
                         {t.ticker}
@@ -380,6 +389,7 @@ function TradingJournal() {
                     </div>
                     <span style={{ fontSize: 11, color: "#33334a" }}>{t.size}ct</span>
                     <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                   </div>
                 ))}
               </div>
@@ -395,27 +405,28 @@ function TradingJournal() {
                 ))}
               </div>
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L"].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
+                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
                 </div>
                 {filtered.map(t => (
                   <div key={t.id}>
-                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px", padding: "13px 20px", alignItems: "center" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>
-                      <div>
+                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 40px", padding: "13px 20px", alignItems: "center" }}>
+                      <div onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} style={{ cursor: "pointer" }}>
                         <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </p>
                         <p style={{ fontSize: 9, color: "#252540" }}>{t.date}</p>
                       </div>
-                      <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
-                      <span style={{ fontSize: 10, color: "#444" }}>{t.session.replace("RTH ", "")}</span>
-                      <span style={{ fontSize: 11, color: "#555" }}>{t.strategy}</span>
-                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content" }}>{t.emotion}</span>
-                      <span style={{ fontSize: 12, color: "#444" }}>{t.size}</span>
-                      <span style={{ fontSize: 12, color: "#777" }}>{t.entry}</span>
-                      <span style={{ fontSize: 12, color: "#777" }}>{t.exit}</span>
-                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                      <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
+                      <span style={{ fontSize: 10, color: "#444", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
+                      <span style={{ fontSize: 11, color: "#555", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.strategy}</span>
+                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.emotion}</span>
+                      <span style={{ fontSize: 12, color: "#444", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
+                      <span style={{ fontSize: 12, color: "#777", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
+                      <span style={{ fontSize: 12, color: "#777", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right", cursor: "pointer" }} className={t.pnl >= 0 ? "pos" : "neg"} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                     </div>
                     {expandedTrade === t.id && (
                       <div style={{ padding: "14px 20px", background: "#09090f", borderBottom: "1px solid #0f0f1e" }}>
@@ -734,6 +745,20 @@ function TradingJournal() {
               </div>
             )}
             <button className="gbtn" onClick={handleSubmit} style={{ width: "100%", marginTop: 4 }}>Save Trade</button>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION */}
+      {deleteConfirm && (
+        <div onClick={() => setDeleteConfirm(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 420, width: "90%" }}>
+            <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Delete Trade?</p>
+            <p style={{ fontSize: 12, color: "#666", marginBottom: 24, lineHeight: 1.6 }}>This action cannot be undone. The trade will be permanently removed from your journal.</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setDeleteConfirm(null)} style={{ flex: 1 }}>Cancel</button>
+              <button onClick={() => deleteTrade(deleteConfirm)} style={{ flex: 1, background: "#ff4466", border: "none", color: "#fff", padding: "10px 20px", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 11, letterSpacing: ".08em", fontWeight: 500 }}>Delete</button>
+            </div>
           </div>
         </div>
       )}
