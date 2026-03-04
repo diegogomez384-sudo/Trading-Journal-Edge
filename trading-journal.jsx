@@ -208,6 +208,18 @@ function TradingJournal() {
   const [view, setView] = useState("dashboard");
   const [showForm, setShowForm] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
+
+  // Custom strategies
+  const [customStrategies, setCustomStrategies] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalCustomStrategies');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
+  const [showStrategyManager, setShowStrategyManager] = useState(false);
+  const [newStrategy, setNewStrategy] = useState("");
   const [isDark, setIsDark] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalTheme');
@@ -241,6 +253,15 @@ function TradingJournal() {
       console.error('Failed to save theme to localStorage:', error);
     }
   }, [isDark]);
+
+  // Save custom strategies to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalCustomStrategies', JSON.stringify(customStrategies));
+    } catch (error) {
+      console.error('Failed to save custom strategies to localStorage:', error);
+    }
+  }, [customStrategies]);
 
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
@@ -328,7 +349,25 @@ function TradingJournal() {
     setExpandedTrade(null);
   }
 
-  const stratPerf = STRATEGIES.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
+  function addCustomStrategy() {
+    const trimmed = newStrategy.trim();
+    if (!trimmed) return;
+    if (STRATEGIES.includes(trimmed) || customStrategies.includes(trimmed)) {
+      alert('Strategy already exists!');
+      return;
+    }
+    setCustomStrategies(prev => [...prev, trimmed]);
+    setNewStrategy("");
+  }
+
+  function deleteCustomStrategy(strategy) {
+    setCustomStrategies(prev => prev.filter(s => s !== strategy));
+  }
+
+  // Combined strategy list (default + custom)
+  const allStrategies = [...STRATEGIES, ...customStrategies];
+
+  const stratPerf = allStrategies.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
   const emotPerf = EMOTIONS.map(e => { const em = trades.filter(t => t.emotion === e); return { name: e, count: em.length, pnl: em.reduce((a, t) => a + t.pnl, 0) }; }).filter(e => e.count > 0).sort((a, b) => b.pnl - a.pnl);
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
@@ -890,9 +929,12 @@ function TradingJournal() {
               <div><span className="lbl">Entry Price</span><input type="number" step="0.25" placeholder="0.00" value={form.entry} onChange={e => setForm(p => ({ ...p, entry: e.target.value }))} /></div>
               <div><span className="lbl">Exit Price</span><input type="number" step="0.25" placeholder="0.00" value={form.exit} onChange={e => setForm(p => ({ ...p, exit: e.target.value }))} /></div>
               <div>
-                <span className="lbl">Strategy</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span className="lbl" style={{ margin: 0 }}>Strategy</span>
+                  <button type="button" className="ghost" onClick={() => setShowStrategyManager(true)} style={{ padding: "4px 8px", fontSize: 9 }}>Manage</button>
+                </div>
                 <select value={form.strategy} onChange={e => setForm(p => ({ ...p, strategy: e.target.value }))}>
-                  {STRATEGIES.map(s => <option key={s}>{s}</option>)}
+                  {allStrategies.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
@@ -928,6 +970,58 @@ function TradingJournal() {
               </div>
             )}
             <button className="gbtn" onClick={handleSubmit} style={{ width: "100%", marginTop: 4 }}>Save Trade</button>
+          </div>
+        </div>
+      )}
+
+      {/* STRATEGY MANAGER */}
+      {showStrategyManager && (
+        <div onClick={() => setShowStrategyManager(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 500, width: "90%", maxHeight: "80vh", overflow: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Manage Strategies</p>
+              <button onClick={() => setShowStrategyManager(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <p className="lbl" style={{ marginBottom: 8 }}>Add Custom Strategy</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="e.g., Supply & Demand"
+                  value={newStrategy}
+                  onChange={e => setNewStrategy(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && addCustomStrategy()}
+                  style={{ flex: 1 }}
+                />
+                <button className="gbtn" onClick={addCustomStrategy}>Add</button>
+              </div>
+            </div>
+
+            <div>
+              <p className="lbl" style={{ marginBottom: 12 }}>Default Strategies</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                {STRATEGIES.map(s => (
+                  <div key={s} style={{ padding: "6px 12px", background: "#111120", border: "1px solid #222235", borderRadius: 4, fontSize: 11, color: "#aaa" }}>
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {customStrategies.length > 0 && (
+              <div>
+                <p className="lbl" style={{ marginBottom: 12 }}>Custom Strategies</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {customStrategies.map(s => (
+                    <div key={s} style={{ padding: "6px 12px", background: "#7fffb218", border: "1px solid #7fffb244", borderRadius: 4, fontSize: 11, color: "#7fffb2", display: "flex", alignItems: "center", gap: 8 }}>
+                      {s}
+                      <button onClick={() => deleteCustomStrategy(s)} style={{ background: "none", border: "none", color: "#ff4466", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
