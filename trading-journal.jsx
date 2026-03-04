@@ -56,6 +56,15 @@ function formatDateDisplay(dateString) {
   return dateString;
 }
 
+function getTodayLocalDate() {
+  // Get today's date in local timezone as YYYY-MM-DD
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function detectSession(timestamp) {
   const date = new Date(timestamp);
   const etString = date.toLocaleString("en-US", { timeZone: "America/New_York" });
@@ -645,10 +654,11 @@ function TradingJournal() {
                   }
 
                   // Add calendar days
+                  const todayDate = getTodayLocalDate();
                   for (let day = 1; day <= daysInMonth; day++) {
                     const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const stats = dateStats[dateKey];
-                    const isToday = new Date().toISOString().split('T')[0] === dateKey;
+                    const isToday = todayDate === dateKey;
 
                     days.push(
                       <div key={day} style={{
