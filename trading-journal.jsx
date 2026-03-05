@@ -277,6 +277,10 @@ function TradingJournal() {
   const [editStrategyTrade, setEditStrategyTrade] = useState(null); // trade being edited
   const [editStrategyValue, setEditStrategyValue] = useState("");
 
+  // --- Edit emotion state ---
+  const [editEmotionTrade, setEditEmotionTrade] = useState(null); // trade being edited
+  const [editEmotionValue, setEditEmotionValue] = useState("");
+
   function handleCsvFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -382,6 +386,22 @@ function TradingJournal() {
     ));
     setEditStrategyTrade(null);
     setEditStrategyValue("");
+  }
+
+  function openEditEmotion(trade) {
+    setEditEmotionTrade(trade);
+    setEditEmotionValue(trade.emotion);
+  }
+
+  function saveEditEmotion() {
+    if (!editEmotionTrade || !editEmotionValue) return;
+    setTrades(prev => prev.map(t =>
+      t.id === editEmotionTrade.id
+        ? { ...t, emotion: editEmotionValue }
+        : t
+    ));
+    setEditEmotionTrade(null);
+    setEditEmotionValue("");
   }
 
   // Combined strategy list (default + custom)
@@ -502,7 +522,10 @@ function TradingJournal() {
                         {t.strategy}
                         <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
                       </span>
-                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14` }}>{t.emotion}</span>
+                      <span className="tag" onClick={(e) => { e.stopPropagation(); openEditEmotion(t); }} style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14`, cursor: "pointer" }} title="Click to edit emotion">
+                        {t.emotion}
+                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
+                      </span>
                       <span className="tag" style={{ background: "#111120", color: "#bbb", fontSize: 9 }}>{t.session}</span>
                     </div>
                     <span style={{ fontSize: 11, color: "#a3a3ba" }}>{t.size}ct</span>
@@ -542,7 +565,10 @@ function TradingJournal() {
                         {t.strategy}
                         <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
                       </span>
-                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.emotion}</span>
+                      <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); openEditEmotion(t); }} title="Click to edit emotion">
+                        {t.emotion}
+                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
+                      </span>
                       <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
@@ -1074,6 +1100,55 @@ function TradingJournal() {
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setEditStrategyTrade(null)} style={{ flex: 1 }}>Cancel</button>
               <button className="gbtn" onClick={saveEditStrategy} style={{ flex: 1 }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT EMOTION MODAL */}
+      {editEmotionTrade && (
+        <div onClick={() => setEditEmotionTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 500, width: "90%" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Edit Emotional State</p>
+              <button onClick={() => setEditEmotionTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: "#999", marginBottom: 16 }}>
+                Trade: <span style={{ color: "#fff", fontWeight: 600 }}>{editEmotionTrade.ticker}</span> | {formatDateDisplay(editEmotionTrade.date)}
+                {editEmotionTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
+              </p>
+              <p className="lbl" style={{ marginBottom: 12 }}>Emotional State</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {EMOTIONS.map(e => {
+                  const col = emotionColors[e] || "#888";
+                  const isSelected = editEmotionValue === e;
+                  return (
+                    <button
+                      key={e}
+                      onClick={() => setEditEmotionValue(e)}
+                      style={{
+                        padding: "8px 14px",
+                        border: `1px solid ${isSelected ? col : "#1a1a2a"}`,
+                        borderRadius: 4,
+                        background: isSelected ? `${col}18` : "none",
+                        color: isSelected ? col : "#666",
+                        cursor: "pointer",
+                        fontSize: 11,
+                        fontFamily: "'DM Mono',monospace",
+                        transition: "all .15s",
+                        letterSpacing: ".05em"
+                      }}
+                    >
+                      {e}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setEditEmotionTrade(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="gbtn" onClick={saveEditEmotion} style={{ flex: 1 }}>Save Changes</button>
             </div>
           </div>
         </div>
