@@ -630,52 +630,74 @@ function TradingJournal() {
               </div>
 
               <div className="card" style={{ marginBottom: 16 }}>
-                <p className="lbl" style={{ marginBottom: 10 }}>Net Daily P&L</p>
-                <div style={{ height: 140, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  {/* Chart area */}
-                  <div style={{ height: 100, display: "flex", alignItems: "flex-end", gap: 4, position: "relative" }}>
-                    {/* Zero line */}
-                    <div style={{ position: "absolute", bottom: "50%", left: 0, right: 0, height: 1, background: "#222235", opacity: 0.5 }} />
-                    {dailyPnl.map((d, i) => {
-                      const pnl = d.pnl;
-                      const h = Math.max(4, (Math.abs(pnl) / maxDailyPnl) * 48);
-                      const isPositive = pnl >= 0;
-                      return (
-                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: isPositive ? "flex-end" : "flex-start", height: "100%" }}>
-                          <div
-                            style={{
-                              width: "100%",
-                              height: h,
-                              borderRadius: "2px",
-                              background: isPositive ? "#7fffb2" : "#ff4466",
-                              opacity: 0.8,
-                              transition: "opacity 0.2s"
-                            }}
-                            title={`${formatDateDisplay(d.date)}: ${pnl >= 0 ? "+" : ""}$${pnl.toLocaleString()}`}
-                            onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
-                            onMouseLeave={(e) => e.currentTarget.style.opacity = 0.8}
-                          />
-                        </div>
-                      );
-                    })}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                  <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
+                  <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
+                </div>
+
+                <div style={{ display: "flex", height: 160, position: "relative" }}>
+                  {/* Y-axis labels */}
+                  <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
+                    <span>${maxDailyPnl >= 1000 ? (maxDailyPnl / 1000).toFixed(1) + 'k' : maxDailyPnl}</span>
+                    <span>${(maxDailyPnl * 0.8).toFixed(0)}</span>
+                    <span>${(maxDailyPnl * 0.6).toFixed(0)}</span>
+                    <span>${(maxDailyPnl * 0.4).toFixed(0)}</span>
+                    <span>${(maxDailyPnl * 0.2).toFixed(0)}</span>
+                    <span>$0</span>
                   </div>
-                  {/* Date labels */}
-                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                    {dailyPnl.map((d, i) => {
-                      // Show every nth date to avoid crowding
-                      const showLabel = dailyPnl.length <= 10 || i % Math.ceil(dailyPnl.length / 10) === 0 || i === dailyPnl.length - 1;
-                      return (
-                        <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                          {showLabel && (
-                            <p style={{ fontSize: 8, color: "#555", transform: "rotate(-45deg)", transformOrigin: "center", whiteSpace: "nowrap" }}>
-                              {formatDateDisplay(d.date).split('/').slice(0, 2).join('/')}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
+
+                  {/* Chart and Grid */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative" }}>
+
+                    {/* Horizontal grid lines */}
+                    {[1, 0.8, 0.6, 0.4, 0.2, 0].map((level, i) => (
+                      <div key={i} style={{ position: "absolute", bottom: `${level * 100}%`, left: 0, right: 0, height: 1, borderTop: "1px dashed #222235", opacity: 0.6 }} />
+                    ))}
+
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "12%", padding: "0 4%", position: "relative", zIndex: 1, justifyContent: "space-around" }}>
+                      {dailyPnl.map((d, i) => {
+                        const h = Math.max(2, (Math.abs(d.pnl) / maxDailyPnl) * 100);
+                        const isPositive = d.pnl >= 0;
+
+                        // Pick a few distinct dates to show underneath to match screenshot style
+                        const showLabel = dailyPnl.length <= 5 || i % Math.ceil(dailyPnl.length / 5) === 0 || i === dailyPnl.length - 1;
+
+                        return (
+                          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", flex: 1, maxWidth: 30 }}>
+                            {isPositive && (
+                              <div
+                                style={{ width: "100%", height: `${h}%`, background: "#51A877", transition: "opacity 0.2s ease" }}
+                                title={`${formatDateDisplay(d.date)}: +$${d.pnl.toLocaleString()}`}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
+                              />
+                            )}
+                            {!isPositive && (
+                              /* Placeholder logic for negative layout if needed to look like screenshot where all are above 0 usually, but logic exists */
+                              <div
+                                style={{ width: "100%", height: `${h}%`, background: "#ff4466", transition: "opacity 0.2s ease", marginTop: "auto" }}
+                                title={`${formatDateDisplay(d.date)}: -$${Math.abs(d.pnl).toLocaleString()}`}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
+                              />
+                            )}
+
+                            {/* Attached label underneath bar */}
+                            <div style={{ position: "absolute", bottom: -24, textAlign: "center", width: 80, marginLeft: -25 }}>
+                              {showLabel && (
+                                <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
+                                  {formatDateDisplay(d.date).slice(0, 8)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
+                {/* Spacer for bottom labels */}
+                <div style={{ height: 24 }} />
               </div>
 
               <div className="card">
