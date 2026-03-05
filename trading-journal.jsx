@@ -632,7 +632,7 @@ function TradingJournal() {
                     <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
                     <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
                   </div>
-                  <p style={{ fontSize: 12, color: "#8a8aa8", margin: 0, letterSpacing: ".05em" }}>{trades.length}</p>
+                  <p style={{ fontSize: 14, color: "#9595b0", margin: 0, fontWeight: 500 }}>{trades.length}</p>
                 </div>
 
                 <div style={{ display: "flex", height: 160, position: "relative" }}>
