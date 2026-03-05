@@ -286,6 +286,7 @@ function TradingJournal() {
   const [notesText, setNotesText] = useState("");
   const [notesImages, setNotesImages] = useState([]); // array of {id, dataUrl}
   const imageInputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
 
   function handleCsvFile(file) {
     if (!file) return;
@@ -424,7 +425,7 @@ function TradingJournal() {
   }
 
   function handleImageUpload(e) {
-    const files = Array.from(e.target.files);
+    const files = e.target?.files ? Array.from(e.target.files) : e;
     files.forEach(file => {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
@@ -441,6 +442,27 @@ function TradingJournal() {
     });
     // Reset input
     if (imageInputRef.current) imageInputRef.current.value = '';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    handleImageUpload(files);
   }
 
   function removeImage(imageId) {
@@ -1279,7 +1301,7 @@ function TradingJournal() {
       {/* EDIT NOTES MODAL */}
       {editNotesTrade && (
         <div onClick={() => setEditNotesTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 700, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 800, width: "90%", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Trade Notes</p>
               <button onClick={() => setEditNotesTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
@@ -1294,27 +1316,28 @@ function TradingJournal() {
                 {editNotesTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
               </p>
 
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <p className="lbl" style={{ margin: 0 }}>Notes</p>
-                  <button className="ghost" onClick={insertBulletPoint} style={{ padding: "4px 10px", fontSize: 10 }}>• Add Bullet</button>
-                </div>
-                <textarea
-                  id="notes-textarea"
-                  rows={8}
-                  placeholder="Add your trade notes here...&#10;&#10;Use the 'Add Bullet' button or type manually:&#10;• Entry reason&#10;• What went well&#10;• What to improve"
-                  value={notesText}
-                  onChange={e => setNotesText(e.target.value)}
-                  style={{ resize: "vertical", minHeight: 120 }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <p className="lbl" style={{ margin: 0 }}>Screenshots ({notesImages.length})</p>
-                  <button className="ghost" onClick={() => imageInputRef.current?.click()} style={{ padding: "4px 10px", fontSize: 10 }}>
-                    📷 Upload Image
-                  </button>
+              {/* Unified Notes Section with Drag & Drop */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{
+                  background: dragOver ? "rgba(127,255,178,0.05)" : "#09090f",
+                  border: `2px dashed ${dragOver ? "#7fffb2" : "#222235"}`,
+                  borderRadius: 8,
+                  padding: 20,
+                  transition: "all 0.2s",
+                  minHeight: 400
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <p className="lbl" style={{ margin: 0 }}>Notes & Screenshots</p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="ghost" onClick={insertBulletPoint} style={{ padding: "4px 10px", fontSize: 10 }}>• Bullet</button>
+                    <button className="ghost" onClick={() => imageInputRef.current?.click()} style={{ padding: "4px 10px", fontSize: 10 }}>
+                      📷 Add Image
+                    </button>
+                  </div>
                   <input
                     ref={imageInputRef}
                     type="file"
@@ -1325,26 +1348,85 @@ function TradingJournal() {
                   />
                 </div>
 
+                <p style={{ fontSize: 10, color: "#666", marginBottom: 12, fontStyle: "italic" }}>
+                  💡 Tip: Drag & drop screenshots directly from your computer, or click "Add Image" to upload
+                </p>
+
+                {/* Text Area */}
+                <textarea
+                  id="notes-textarea"
+                  rows={6}
+                  placeholder="Type your notes here...&#10;&#10;• Entry reason&#10;• What went well&#10;• Areas to improve&#10;&#10;Add screenshots below by dragging images or clicking 'Add Image'"
+                  value={notesText}
+                  onChange={e => setNotesText(e.target.value)}
+                  style={{
+                    resize: "vertical",
+                    minHeight: 120,
+                    marginBottom: 16,
+                    background: "#0a0a14",
+                    border: "1px solid #181828"
+                  }}
+                />
+
+                {/* Images Section - Integrated */}
                 {notesImages.length > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
-                    {notesImages.map(img => (
-                      <div key={img.id} style={{ position: "relative", background: "#09090f", borderRadius: 6, padding: 8, border: "1px solid #181828" }}>
-                        <img src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 4, marginBottom: 6 }} />
-                        <p style={{ fontSize: 9, color: "#999", marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{img.name}</p>
-                        <button
-                          onClick={() => removeImage(img.id)}
-                          style={{ position: "absolute", top: 4, right: 4, background: "#ff4466", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
-                        >
-                          ×
-                        </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {notesImages.map((img, index) => (
+                      <div key={img.id} style={{ position: "relative" }}>
+                        <div style={{ position: "relative", background: "#0a0a14", borderRadius: 6, padding: 12, border: "1px solid #181828" }}>
+                          <img
+                            src={img.dataUrl}
+                            alt={img.name}
+                            style={{
+                              width: "100%",
+                              maxHeight: 400,
+                              objectFit: "contain",
+                              borderRadius: 4,
+                              marginBottom: 8
+                            }}
+                          />
+                          <p style={{ fontSize: 10, color: "#666", marginBottom: 0 }}>Screenshot {index + 1}: {img.name}</p>
+                          <button
+                            onClick={() => removeImage(img.id)}
+                            style={{
+                              position: "absolute",
+                              top: 20,
+                              right: 20,
+                              background: "#ff4466",
+                              border: "none",
+                              color: "#fff",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              cursor: "pointer",
+                              fontSize: 16,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                            }}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {notesImages.length === 0 && (
-                  <div style={{ padding: "20px", background: "#09090f", border: "1px dashed #222235", borderRadius: 6, textAlign: "center" }}>
-                    <p style={{ fontSize: 11, color: "#666" }}>No screenshots uploaded yet. Click "Upload Image" to add charts or trade screenshots.</p>
+                {dragOver && (
+                  <div style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    pointerEvents: "none",
+                    textAlign: "center"
+                  }}>
+                    <p style={{ fontSize: 24, marginBottom: 8 }}>📷</p>
+                    <p style={{ fontSize: 14, color: "#7fffb2", fontWeight: 600 }}>Drop screenshots here</p>
                   </div>
                 )}
               </div>
