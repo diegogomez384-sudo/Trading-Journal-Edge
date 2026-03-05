@@ -619,20 +619,20 @@ function TradingJournal() {
                   { l: "Avg Win", v: `+$${avgWin.toFixed(0)}`, pos: true },
                   { l: "Max Drawdown", v: `-$${maxDD.toFixed(0)}`, pos: false },
                 ].map(s => (
-                  <div key={s.l} style={{ background: "#090912", border: "1px solid #131325", borderRadius: 6, padding: "14px 16px" }}>
+                  <div key={s.l} style={{ background: "#090912", border: "1px solid #131325", borderRadius: 6, padding: "14px 16px", position: "relative" }}>
                     <p className="lbl" style={{ marginBottom: 8 }}>{s.l}</p>
                     <p style={{ fontFamily: "Syne,sans-serif", fontSize: s.big ? 22 : 18, fontWeight: 700, color: s.pos ? "#7fffb2" : "#ff4466" }}>{s.v}</p>
+                    {s.l === "Net P&L" && (
+                      <p style={{ position: "absolute", top: 14, right: 16, fontSize: 13, color: "#9595b0", margin: 0, fontWeight: 500 }}>{trades.length}</p>
+                    )}
                   </div>
                 ))}
               </div>
 
               <div className="card" style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
-                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
-                  </div>
-                  <p style={{ fontSize: 14, color: "#9595b0", margin: 0, fontWeight: 500 }}>{trades.length}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                  <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
+                  <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
                 </div>
 
                 <div style={{ display: "flex", height: 160, position: "relative" }}>
