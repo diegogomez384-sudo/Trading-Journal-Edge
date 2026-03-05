@@ -324,8 +324,21 @@ function TradingJournal() {
   const maxDD = (() => { let peak = 0, mdd = 0, run = 0; trades.slice().reverse().forEach(t => { run += t.pnl; if (run > peak) peak = run; const d = peak - run; if (d > mdd) mdd = d; }); return mdd; })();
 
   const filtered = filterSession === "All" ? trades : trades.filter(t => t.session === filterSession);
-  const cumPnl = trades.slice().reverse().reduce((acc, t) => { acc.push((acc.length ? acc[acc.length - 1] : 0) + t.pnl); return acc; }, []);
-  const maxCum = Math.max(...cumPnl.map(Math.abs), 1);
+
+  // Calculate daily P&L grouped by date
+  const dailyPnl = (() => {
+    const byDate = {};
+    trades.forEach(t => {
+      const date = t.date;
+      if (!byDate[date]) {
+        byDate[date] = { date, pnl: 0 };
+      }
+      byDate[date].pnl += t.pnl;
+    });
+    // Sort by date (oldest to newest)
+    return Object.values(byDate).sort((a, b) => new Date(a.date) - new Date(b.date));
+  })();
+  const maxDailyPnl = Math.max(...dailyPnl.map(d => Math.abs(d.pnl)), 1);
 
   const previewPnl = form.entry && form.exit && form.size ? calcPnl({ ...form, entry: +form.entry, exit: +form.exit, size: +form.size }) : null;
 
@@ -617,12 +630,51 @@ function TradingJournal() {
               </div>
 
               <div className="card" style={{ marginBottom: 16 }}>
-                <p className="lbl" style={{ marginBottom: 10 }}>Equity Curve</p>
-                <div style={{ height: 72, display: "flex", alignItems: "flex-end", gap: 3 }}>
-                  {cumPnl.map((v, i) => {
-                    const h = Math.max(3, (Math.abs(v) / maxCum) * 66);
-                    return <div key={i} style={{ flex: 1, height: h, borderRadius: "2px 2px 0 0", background: v >= 0 ? "#7fffb2" : "#ff4466", opacity: .7 }} />;
-                  })}
+                <p className="lbl" style={{ marginBottom: 10 }}>Net Daily P&L</p>
+                <div style={{ height: 140, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  {/* Chart area */}
+                  <div style={{ height: 100, display: "flex", alignItems: "flex-end", gap: 4, position: "relative" }}>
+                    {/* Zero line */}
+                    <div style={{ position: "absolute", bottom: "50%", left: 0, right: 0, height: 1, background: "#222235", opacity: 0.5 }} />
+                    {dailyPnl.map((d, i) => {
+                      const pnl = d.pnl;
+                      const h = Math.max(4, (Math.abs(pnl) / maxDailyPnl) * 48);
+                      const isPositive = pnl >= 0;
+                      return (
+                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: isPositive ? "flex-end" : "flex-start", height: "100%" }}>
+                          <div
+                            style={{
+                              width: "100%",
+                              height: h,
+                              borderRadius: "2px",
+                              background: isPositive ? "#7fffb2" : "#ff4466",
+                              opacity: 0.8,
+                              transition: "opacity 0.2s"
+                            }}
+                            title={`${formatDateDisplay(d.date)}: ${pnl >= 0 ? "+" : ""}$${pnl.toLocaleString()}`}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = 0.8}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Date labels */}
+                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                    {dailyPnl.map((d, i) => {
+                      // Show every nth date to avoid crowding
+                      const showLabel = dailyPnl.length <= 10 || i % Math.ceil(dailyPnl.length / 10) === 0 || i === dailyPnl.length - 1;
+                      return (
+                        <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                          {showLabel && (
+                            <p style={{ fontSize: 8, color: "#555", transform: "rotate(-45deg)", transformOrigin: "center", whiteSpace: "nowrap" }}>
+                              {formatDateDisplay(d.date).split('/').slice(0, 2).join('/')}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
