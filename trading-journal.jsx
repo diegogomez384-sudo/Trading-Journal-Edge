@@ -281,6 +281,12 @@ function TradingJournal() {
   const [editEmotionTrade, setEditEmotionTrade] = useState(null); // trade being edited
   const [editEmotionValue, setEditEmotionValue] = useState("");
 
+  // --- Notes editor state ---
+  const [editNotesTrade, setEditNotesTrade] = useState(null); // trade being edited
+  const [notesText, setNotesText] = useState("");
+  const [notesImages, setNotesImages] = useState([]); // array of {id, dataUrl}
+  const imageInputRef = useRef(null);
+
   function handleCsvFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -404,6 +410,102 @@ function TradingJournal() {
     setEditEmotionValue("");
   }
 
+  function openEditNotes(trade) {
+    setEditNotesTrade(trade);
+    // Parse existing notes structure or use legacy text
+    if (trade.notesData) {
+      setNotesText(trade.notesData.text || "");
+      setNotesImages(trade.notesData.images || []);
+    } else {
+      // Legacy notes field - just text
+      setNotesText(trade.notes || "");
+      setNotesImages([]);
+    }
+  }
+
+  function handleImageUpload(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const newImage = {
+            id: Date.now() + Math.random(),
+            dataUrl: event.target.result,
+            name: file.name
+          };
+          setNotesImages(prev => [...prev, newImage]);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    // Reset input
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  }
+
+  function removeImage(imageId) {
+    setNotesImages(prev => prev.filter(img => img.id !== imageId));
+  }
+
+  function insertBulletPoint() {
+    const textarea = document.getElementById('notes-textarea');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = notesText;
+
+    // Check if we're at the start of a line
+    const beforeCursor = text.substring(0, start);
+    const afterCursor = text.substring(end);
+    const lastNewline = beforeCursor.lastIndexOf('\n');
+    const currentLineStart = lastNewline === -1 ? 0 : lastNewline + 1;
+    const currentLine = text.substring(currentLineStart, start);
+
+    let newText;
+    let newCursorPos;
+
+    if (currentLine.trim() === '') {
+      // Empty line - add bullet
+      newText = beforeCursor + '• ' + afterCursor;
+      newCursorPos = start + 2;
+    } else {
+      // Has text - add bullet on new line
+      newText = beforeCursor + '\n• ' + afterCursor;
+      newCursorPos = start + 3;
+    }
+
+    setNotesText(newText);
+
+    // Set cursor position after state update
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  }
+
+  function saveEditNotes() {
+    if (!editNotesTrade) return;
+
+    const notesData = {
+      text: notesText,
+      images: notesImages
+    };
+
+    // Also update legacy 'notes' field for backwards compatibility
+    const legacyNotes = notesText || (notesImages.length > 0 ? `[Has ${notesImages.length} image(s)]` : "");
+
+    setTrades(prev => prev.map(t =>
+      t.id === editNotesTrade.id
+        ? { ...t, notes: legacyNotes, notesData }
+        : t
+    ));
+
+    setEditNotesTrade(null);
+    setNotesText("");
+    setNotesImages([]);
+  }
+
   // Combined strategy list (default + custom)
   const allStrategies = [...STRATEGIES, ...customStrategies];
 
@@ -508,7 +610,7 @@ function TradingJournal() {
                   <button className="ghost" onClick={() => setView("trades")}>View All \u2192</button>
                 </div>
                 {trades.slice(0, 6).map(t => (
-                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px 30px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
+                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px 30px 30px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
                     <div>
                       <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
                         {t.ticker}
@@ -530,6 +632,7 @@ function TradingJournal() {
                     </div>
                     <span style={{ fontSize: 11, color: "#a3a3ba" }}>{t.size}ct</span>
                     <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                    <button onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 4, color: (t.notesData?.text || t.notesData?.images?.length) ? "#7fffb2" : "#666", opacity: 0.7, transition: "all 0.2s" }} onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.transform = "scale(1.1)"; }} onMouseLeave={(e) => { e.target.style.opacity = 0.7; e.target.style.transform = "scale(1)"; }} title="Edit notes">📝</button>
                     <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                   </div>
                 ))}
@@ -546,12 +649,12 @@ function TradingJournal() {
                 ))}
               </div>
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
+                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
                 </div>
                 {filtered.map(t => (
                   <div key={t.id}>
-                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 40px", padding: "13px 20px", alignItems: "center" }}>
+                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
                       <div onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} style={{ cursor: "pointer" }}>
                         <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
                           {t.ticker}
@@ -573,11 +676,30 @@ function TradingJournal() {
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
                       <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right", cursor: "pointer" }} className={t.pnl >= 0 ? "pos" : "neg"} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
+                      <button onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 4, color: (t.notesData?.text || t.notesData?.images?.length) ? "#7fffb2" : "#666", opacity: 0.7, transition: "all 0.2s" }} onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.transform = "scale(1.1)"; }} onMouseLeave={(e) => { e.target.style.opacity = 0.7; e.target.style.transform = "scale(1)"; }} title="Edit notes">📝</button>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                     </div>
                     {expandedTrade === t.id && (
                       <div style={{ padding: "14px 20px", background: "#09090f", borderBottom: "1px solid #0f0f1e" }}>
-                        <p style={{ fontSize: 12, color: "#ccc", marginBottom: 10, fontStyle: "italic" }}>{t.notes || "No notes recorded."}</p>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                            <p style={{ fontSize: 10, color: "#7fffb2", letterSpacing: ".1em" }}>NOTES</p>
+                            <button className="ghost" onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ padding: "4px 10px", fontSize: 9 }}>✎ Edit Notes</button>
+                          </div>
+                          {t.notesData?.text && (
+                            <p style={{ fontSize: 12, color: "#ccc", marginBottom: 10, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{t.notesData.text}</p>
+                          )}
+                          {t.notesData?.images?.length > 0 && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8, marginTop: 10 }}>
+                              {t.notesData.images.map(img => (
+                                <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #181828" }} />
+                              ))}
+                            </div>
+                          )}
+                          {!t.notesData?.text && !t.notesData?.images?.length && (
+                            <p style={{ fontSize: 11, color: "#666", fontStyle: "italic" }}>No notes recorded. Click "Edit Notes" to add.</p>
+                          )}
+                        </div>
                         <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#aaa", marginBottom: 12 }}>
                           <span>Point value: <span style={{ color: "#ddd" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
                           <span>Move: <span style={{ color: "#ddd" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
@@ -1149,6 +1271,88 @@ function TradingJournal() {
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setEditEmotionTrade(null)} style={{ flex: 1 }}>Cancel</button>
               <button className="gbtn" onClick={saveEditEmotion} style={{ flex: 1 }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT NOTES MODAL */}
+      {editNotesTrade && (
+        <div onClick={() => setEditNotesTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 700, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Trade Notes</p>
+              <button onClick={() => setEditNotesTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: "#999", marginBottom: 16 }}>
+                Trade: <span style={{ color: "#fff", fontWeight: 600 }}>{editNotesTrade.ticker}</span> | {formatDateDisplay(editNotesTrade.date)} |
+                <span className={editNotesTrade.pnl >= 0 ? "pos" : "neg"} style={{ marginLeft: 6 }}>
+                  {editNotesTrade.pnl >= 0 ? "+" : ""}${editNotesTrade.pnl.toLocaleString()}
+                </span>
+                {editNotesTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
+              </p>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <p className="lbl" style={{ margin: 0 }}>Notes</p>
+                  <button className="ghost" onClick={insertBulletPoint} style={{ padding: "4px 10px", fontSize: 10 }}>• Add Bullet</button>
+                </div>
+                <textarea
+                  id="notes-textarea"
+                  rows={8}
+                  placeholder="Add your trade notes here...&#10;&#10;Use the 'Add Bullet' button or type manually:&#10;• Entry reason&#10;• What went well&#10;• What to improve"
+                  value={notesText}
+                  onChange={e => setNotesText(e.target.value)}
+                  style={{ resize: "vertical", minHeight: 120 }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <p className="lbl" style={{ margin: 0 }}>Screenshots ({notesImages.length})</p>
+                  <button className="ghost" onClick={() => imageInputRef.current?.click()} style={{ padding: "4px 10px", fontSize: 10 }}>
+                    📷 Upload Image
+                  </button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={handleImageUpload}
+                  />
+                </div>
+
+                {notesImages.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+                    {notesImages.map(img => (
+                      <div key={img.id} style={{ position: "relative", background: "#09090f", borderRadius: 6, padding: 8, border: "1px solid #181828" }}>
+                        <img src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 4, marginBottom: 6 }} />
+                        <p style={{ fontSize: 9, color: "#999", marginBottom: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{img.name}</p>
+                        <button
+                          onClick={() => removeImage(img.id)}
+                          style={{ position: "absolute", top: 4, right: 4, background: "#ff4466", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {notesImages.length === 0 && (
+                  <div style={{ padding: "20px", background: "#09090f", border: "1px dashed #222235", borderRadius: 6, textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "#666" }}>No screenshots uploaded yet. Click "Upload Image" to add charts or trade screenshots.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setEditNotesTrade(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="gbtn" onClick={saveEditNotes} style={{ flex: 1 }}>Save Notes</button>
             </div>
           </div>
         </div>
