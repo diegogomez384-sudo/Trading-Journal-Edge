@@ -611,9 +611,6 @@ function TradingJournal() {
           {/* DASHBOARD */}
           {view === "dashboard" && (
             <div>
-              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-              <p style={{ color: "#9595b0", fontSize: 11, letterSpacing: ".05em", marginBottom: 22 }}>{trades.length} trades logged</p>
-
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
                 {[
                   { l: "Net P&L", v: `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`, pos: totalPnl >= 0, big: true },
@@ -630,9 +627,12 @@ function TradingJournal() {
               </div>
 
               <div className="card" style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                  <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
-                  <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
+                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: "#8a8aa8", margin: 0 }}>{trades.length} trades logged</p>
                 </div>
 
                 <div style={{ display: "flex", height: 160, position: "relative" }}>
