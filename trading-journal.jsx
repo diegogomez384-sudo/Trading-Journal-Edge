@@ -687,7 +687,7 @@ function TradingJournal() {
 
                             {/* Attached label underneath bar */}
                             {showLabel && (
-                              <div style={{ position: "absolute", bottom: -24, textAlign: "center", width: "100%", left: 0 }}>
+                              <div style={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
                                 <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
                                   {formatDateDisplay(d.date)}
                                 </p>
