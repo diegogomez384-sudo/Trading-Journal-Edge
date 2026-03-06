@@ -146,6 +146,13 @@ function parseTradovateCsv(text) {
         const rootSymbol = product.replace(/[FGHJKMNQUVXZ]\d{1,2}$/, "");
         const market = KNOWN_INSTRUMENTS.has(rootSymbol) ? rootSymbol : (KNOWN_INSTRUMENTS.has(product) ? product : "Other");
 
+        // Extract times from timestamps
+        const extractTime = (timestamp) => {
+          if (!timestamp) return "";
+          const date = new Date(timestamp);
+          return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+        };
+
         const trade = {
           id: `csv-${Date.now()}-${trades.length}`,
           date: formatDateToYMD(entryTime),
@@ -154,6 +161,8 @@ function parseTradovateCsv(text) {
           direction,
           entry: parseFloat(entryPrice.toFixed(6)),
           exit: parseFloat(exitPrice.toFixed(6)),
+          entryTime: extractTime(entryTime),
+          exitTime: extractTime(order["Fill Time"] || order["Timestamp"] || order["Date"]),
           size: entryQty,
           strategy: "Other",
           emotion: "Calm",
@@ -234,7 +243,7 @@ function TradingJournal() {
   const [expandedTrade, setExpandedTrade] = useState(null);
   const [tradeAi, setTradeAi] = useState({});
   const [filterSession, setFilterSession] = useState("All");
-  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
+  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
 
   // Save trades to localStorage whenever they change
   useEffect(() => {
@@ -350,7 +359,7 @@ function TradingJournal() {
     const t = { ...form, id: Date.now(), entry: +form.entry, exit: +form.exit, size: +form.size, ticker: form.market, source: "manual" };
     t.pnl = calcPnl(t);
     setTrades(p => [t, ...p]);
-    setForm({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
+    setForm({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
     setShowForm(false);
   }
 
@@ -715,7 +724,10 @@ function TradingJournal() {
                         {t.ticker}
                         {t.source === "csv" && <span className="tv-badge">CSV</span>}
                       </p>
-                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>{formatDateDisplay(t.date)}</p>
+                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>
+                        {formatDateDisplay(t.date)}
+                        {t.entryTime && t.exitTime && <span style={{ marginLeft: 4, color: "#666" }}>• {t.entryTime}-{t.exitTime}</span>}
+                      </p>
                     </div>
                     <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
@@ -759,7 +771,10 @@ function TradingJournal() {
                           {t.ticker}
                           {t.source === "csv" && <span className="tv-badge">CSV</span>}
                         </p>
-                        <p style={{ fontSize: 9, color: "#9595b0" }}>{formatDateDisplay(t.date)}</p>
+                        <p style={{ fontSize: 9, color: "#9595b0" }}>
+                          {formatDateDisplay(t.date)}
+                          {t.entryTime && t.exitTime && <span style={{ marginLeft: 4, color: "#666" }}>• {t.entryTime}-{t.exitTime}</span>}
+                        </p>
                       </div>
                       <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
                       <span style={{ fontSize: 10, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.session.replace("RTH ", "")}</span>
@@ -1217,6 +1232,8 @@ function TradingJournal() {
               <div><span className="lbl">Contracts</span><input type="number" min="1" placeholder="1" value={form.size} onChange={e => setForm(p => ({ ...p, size: e.target.value }))} /></div>
               <div><span className="lbl">Entry Price</span><input type="number" step="0.25" placeholder="0.00" value={form.entry} onChange={e => setForm(p => ({ ...p, entry: e.target.value }))} /></div>
               <div><span className="lbl">Exit Price</span><input type="number" step="0.25" placeholder="0.00" value={form.exit} onChange={e => setForm(p => ({ ...p, exit: e.target.value }))} /></div>
+              <div><span className="lbl">Entry Time</span><input type="time" placeholder="HH:MM" value={form.entryTime} onChange={e => setForm(p => ({ ...p, entryTime: e.target.value }))} /></div>
+              <div><span className="lbl">Exit Time</span><input type="time" placeholder="HH:MM" value={form.exitTime} onChange={e => setForm(p => ({ ...p, exitTime: e.target.value }))} /></div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span className="lbl" style={{ margin: 0 }}>Strategy</span>
@@ -1589,8 +1606,8 @@ function TradingJournal() {
                         </span>
                       </div>
                       <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#999" }}>
-                        <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}</span></span>
-                        <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}</span></span>
+                        <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}{t.entryTime && ` @ ${t.entryTime}`}</span></span>
+                        <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}{t.exitTime && ` @ ${t.exitTime}`}</span></span>
                         <span>Size: <span style={{ color: "#ddd" }}>{t.size}ct</span></span>
                         <span>Session: <span style={{ color: "#ddd" }}>{t.session}</span></span>
                       </div>
