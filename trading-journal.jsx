@@ -663,7 +663,7 @@ function TradingJournal() {
                         const showLabel = dailyPnl.length <= 5 || i % Math.ceil(dailyPnl.length / 5) === 0 || i === dailyPnl.length - 1;
 
                         return (
-                          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", flex: 1, maxWidth: 30 }}>
+                          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", flex: 1, maxWidth: 30, position: "relative" }}>
                             {isPositive && (
                               <div
                                 style={{ width: "100%", height: `${h}%`, background: "#51A877", transition: "opacity 0.2s ease" }}
@@ -683,13 +683,13 @@ function TradingJournal() {
                             )}
 
                             {/* Attached label underneath bar */}
-                            <div style={{ position: "absolute", bottom: -24, textAlign: "center", width: "100%", left: 0 }}>
-                              {showLabel && (
+                            {showLabel && (
+                              <div style={{ position: "absolute", bottom: -24, textAlign: "center", width: "100%", left: 0 }}>
                                 <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
                                   {formatDateDisplay(d.date)}
                                 </p>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
