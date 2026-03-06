@@ -288,6 +288,9 @@ function TradingJournal() {
   const imageInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
 
+  // --- Calendar date modal state ---
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null); // { date, trades }
+
   function handleCsvFile(file) {
     if (!file) return;
     const reader = new FileReader();
@@ -970,14 +973,30 @@ function TradingJournal() {
                     const isToday = todayDate === dateKey;
 
                     days.push(
-                      <div key={day} style={{
-                        padding: 8,
-                        minHeight: 90,
-                        background: stats ? (stats.pnl >= 0 ? "rgba(127,255,178,0.08)" : "rgba(255,68,102,0.08)") : "#09090f",
-                        border: isToday ? "2px solid #7fffb2" : "1px solid #0f0f1e",
-                        borderRadius: 6,
-                        position: "relative"
-                      }}>
+                      <div
+                        key={day}
+                        onClick={() => {
+                          if (stats) {
+                            setSelectedCalendarDate({
+                              date: dateKey,
+                              trades: tradesByDate[dateKey],
+                              stats: stats
+                            });
+                          }
+                        }}
+                        style={{
+                          padding: 8,
+                          minHeight: 90,
+                          background: stats ? (stats.pnl >= 0 ? "rgba(127,255,178,0.08)" : "rgba(255,68,102,0.08)") : "#09090f",
+                          border: isToday ? "2px solid #7fffb2" : "1px solid #0f0f1e",
+                          borderRadius: 6,
+                          position: "relative",
+                          cursor: stats ? "pointer" : "default",
+                          transition: "all 0.2s"
+                        }}
+                        onMouseEnter={(e) => { if (stats) e.currentTarget.style.transform = "scale(1.02)"; }}
+                        onMouseLeave={(e) => { if (stats) e.currentTarget.style.transform = "scale(1)"; }}
+                      >
                         <div style={{ fontSize: 11, color: isToday ? "#7fffb2" : "#555", marginBottom: 6, fontWeight: isToday ? 700 : 400 }}>{day}</div>
                         {stats && (
                           <div style={{ fontSize: 10 }}>
@@ -1523,6 +1542,92 @@ function TradingJournal() {
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setDeleteConfirm(null)} style={{ flex: 1 }}>Cancel</button>
               <button onClick={() => deleteTrade(deleteConfirm)} style={{ flex: 1, background: "#ff4466", border: "none", color: "#fff", padding: "10px 20px", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Mono',monospace", fontSize: 11, letterSpacing: ".08em", fontWeight: 500 }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CALENDAR DATE MODAL */}
+      {selectedCalendarDate && (
+        <div onClick={() => setSelectedCalendarDate(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 900, width: "90%", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div>
+                <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, marginBottom: 6 }}>
+                  {formatDateDisplay(selectedCalendarDate.date)}
+                </p>
+                <p style={{ fontSize: 12, color: "#999" }}>
+                  {selectedCalendarDate.stats.count} trade{selectedCalendarDate.stats.count !== 1 ? 's' : ''} •
+                  <span className={selectedCalendarDate.stats.pnl >= 0 ? "pos" : "neg"} style={{ marginLeft: 6 }}>
+                    {selectedCalendarDate.stats.pnl >= 0 ? "+" : ""}${selectedCalendarDate.stats.pnl.toLocaleString()}
+                  </span> •
+                  <span style={{ marginLeft: 6, color: selectedCalendarDate.stats.winRate >= 50 ? "#7fffb2" : "#ff4466" }}>
+                    {selectedCalendarDate.stats.winRate}% win rate
+                  </span>
+                </p>
+              </div>
+              <button onClick={() => setSelectedCalendarDate(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+
+            {/* Trades List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {selectedCalendarDate.trades.map(t => (
+                <div key={t.id} style={{ background: "#09090f", border: "1px solid #181828", borderRadius: 6, padding: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <p style={{ fontFamily: "Syne,sans-serif", fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}>
+                          {t.ticker}
+                          {t.source === "csv" && <span className="tv-badge">CSV</span>}
+                        </p>
+                        <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>
+                          {t.direction}
+                        </span>
+                        <span className="tag" style={{ background: "#111120", color: "#ccc" }}>{t.strategy}</span>
+                        <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12` }}>
+                          {t.emotion}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#999" }}>
+                        <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}</span></span>
+                        <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}</span></span>
+                        <span>Size: <span style={{ color: "#ddd" }}>{t.size}ct</span></span>
+                        <span>Session: <span style={{ color: "#ddd" }}>{t.session}</span></span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 4 }} className={t.pnl >= 0 ? "pos" : "neg"}>
+                        {t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}
+                      </p>
+                      <button className="ghost" onClick={() => { openEditNotes(t); setSelectedCalendarDate(null); }} style={{ padding: "4px 10px", fontSize: 9 }}>
+                        📝 {t.notesData?.text || t.notesData?.images?.length ? "Edit" : "Add"} Notes
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Show notes if they exist */}
+                  {(t.notesData?.text || t.notesData?.images?.length > 0) && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #181828" }}>
+                      {t.notesData?.text && (
+                        <p style={{ fontSize: 11, color: "#ccc", marginBottom: 8, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                          {t.notesData.text}
+                        </p>
+                      )}
+                      {t.notesData?.images?.length > 0 && (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8 }}>
+                          {t.notesData.images.map(img => (
+                            <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #222235" }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <button className="ghost" onClick={() => setSelectedCalendarDate(null)} style={{ width: "100%" }}>Close</button>
             </div>
           </div>
         </div>
