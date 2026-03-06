@@ -202,11 +202,31 @@ function TradingJournal() {
       const saved = localStorage.getItem('tradingJournalTrades');
       let loadedTrades = saved ? JSON.parse(saved) : initialTrades;
 
-      // Migrate old date formats to YYYY-MM-DD
-      loadedTrades = loadedTrades.map(trade => ({
-        ...trade,
-        date: formatDateToYMD(trade.date)
-      }));
+      // Migrate old date formats to YYYY-MM-DD and add default times if missing
+      loadedTrades = loadedTrades.map(trade => {
+        const migrated = {
+          ...trade,
+          date: formatDateToYMD(trade.date)
+        };
+
+        // Add default times for trades that don't have them (based on session)
+        if (!migrated.entryTime || !migrated.exitTime) {
+          // Default times based on session
+          const sessionTimes = {
+            "RTH Open": { entry: "09:30", exit: "10:15" },
+            "RTH Mid": { entry: "11:00", exit: "13:30" },
+            "RTH Close": { entry: "15:00", exit: "15:45" },
+            "Pre-Market": { entry: "08:00", exit: "09:25" },
+            "Overnight": { entry: "18:00", exit: "20:30" }
+          };
+
+          const defaultTime = sessionTimes[migrated.session] || { entry: "09:30", exit: "15:00" };
+          if (!migrated.entryTime) migrated.entryTime = defaultTime.entry;
+          if (!migrated.exitTime) migrated.exitTime = defaultTime.exit;
+        }
+
+        return migrated;
+      });
 
       return loadedTrades;
     } catch (error) {
