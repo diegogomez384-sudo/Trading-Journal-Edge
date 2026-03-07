@@ -372,6 +372,16 @@ function TradingJournal() {
   })();
   const maxDailyPnl = Math.max(...dailyPnl.map(d => Math.abs(d.pnl)), 1);
 
+  // Calculate cumulative P&L
+  const cumulativePnl = (() => {
+    let cumulative = 0;
+    return dailyPnl.map(d => {
+      cumulative += d.pnl;
+      return { date: d.date, cumPnl: cumulative };
+    });
+  })();
+  const maxCumPnl = Math.max(...cumulativePnl.map(d => Math.abs(d.cumPnl)), 1);
+
   const previewPnl = form.entry && form.exit && form.size ? calcPnl({ ...form, entry: +form.entry, exit: +form.exit, size: +form.size }) : null;
 
   function handleSubmit() {
@@ -661,11 +671,13 @@ function TradingJournal() {
                 ))}
               </div>
 
-              <div className="card" style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                  <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
-                  <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
-                </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                {/* Daily P&L Chart */}
+                <div className="card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Net daily P&L</p>
+                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
+                  </div>
 
                 <div style={{ display: "flex", height: 160, position: "relative" }}>
                   {/* Y-axis labels */}
@@ -728,8 +740,82 @@ function TradingJournal() {
                     </div>
                   </div>
                 </div>
-                {/* Spacer for bottom labels */}
-                <div style={{ height: 24 }} />
+                  {/* Spacer for bottom labels */}
+                  <div style={{ height: 24 }} />
+                </div>
+
+                {/* Cumulative P&L Chart */}
+                <div className="card">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Cumulative P&L</p>
+                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your cumulative profit and loss">ⓘ</span>
+                  </div>
+
+                  <div style={{ display: "flex", height: 160, position: "relative" }}>
+                    {/* Y-axis labels */}
+                    <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
+                      <span>${maxCumPnl >= 1000 ? (maxCumPnl / 1000).toFixed(1) + 'k' : maxCumPnl.toFixed(0)}</span>
+                      <span>${(maxCumPnl * 0.5).toFixed(0)}</span>
+                      <span>$0</span>
+                      <span>${(-maxCumPnl * 0.5).toFixed(0)}</span>
+                      <span>${maxCumPnl >= 1000 ? (-maxCumPnl / 1000).toFixed(1) + 'k' : (-maxCumPnl).toFixed(0)}</span>
+                    </div>
+
+                    {/* Chart */}
+                    <div style={{ flex: 1, position: "relative", paddingTop: 10, paddingBottom: 10 }}>
+                      {/* Zero line */}
+                      <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "#666", opacity: 0.5 }} />
+
+                      {/* Line chart */}
+                      <svg width="100%" height="100%" style={{ position: "relative" }}>
+                        <polyline
+                          points={cumulativePnl.map((d, i) => {
+                            const x = (i / (cumulativePnl.length - 1)) * 100;
+                            const y = 50 - ((d.cumPnl / maxCumPnl) * 40);
+                            return `${x}%,${y}%`;
+                          }).join(' ')}
+                          fill="none"
+                          stroke="#7fffb2"
+                          strokeWidth="2"
+                          style={{ filter: "drop-shadow(0 0 4px rgba(127, 255, 178, 0.5))" }}
+                        />
+                        {cumulativePnl.map((d, i) => {
+                          const x = (i / (cumulativePnl.length - 1)) * 100;
+                          const y = 50 - ((d.cumPnl / maxCumPnl) * 40);
+                          const showLabel = cumulativePnl.length <= 5 || i % Math.ceil(cumulativePnl.length / 5) === 0 || i === cumulativePnl.length - 1;
+                          return (
+                            <g key={i}>
+                              <circle
+                                cx={`${x}%`}
+                                cy={`${y}%`}
+                                r="3"
+                                fill={d.cumPnl >= 0 ? "#7fffb2" : "#ff4466"}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <title>{formatDateDisplay(d.date)}: {d.cumPnl >= 0 ? '+' : ''}${d.cumPnl.toLocaleString()}</title>
+                              </circle>
+                            </g>
+                          );
+                        })}
+                      </svg>
+
+                      {/* Date labels */}
+                      <div style={{ position: "absolute", bottom: -24, left: 0, right: 0, display: "flex", justifyContent: "space-between", paddingLeft: "2%", paddingRight: "2%" }}>
+                        {cumulativePnl.map((d, i) => {
+                          const showLabel = cumulativePnl.length <= 5 || i % Math.ceil(cumulativePnl.length / 5) === 0 || i === cumulativePnl.length - 1;
+                          return showLabel ? (
+                            <p key={i} style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
+                              {formatDateDisplay(d.date)}
+                            </p>
+                          ) : <span key={i} />;
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Spacer for bottom labels */}
+                  <div style={{ height: 24 }} />
+                </div>
               </div>
             </div>
           )}
