@@ -319,6 +319,11 @@ function TradingJournal() {
   const imageInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
 
+  // --- Edit time state ---
+  const [editTimeTrade, setEditTimeTrade] = useState(null); // trade being edited
+  const [editEntryTime, setEditEntryTime] = useState("");
+  const [editExitTime, setEditExitTime] = useState("");
+
   // --- Calendar date modal state ---
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null); // { date, trades }
 
@@ -466,6 +471,24 @@ function TradingJournal() {
     ));
     setEditEmotionTrade(null);
     setEditEmotionValue("");
+  }
+
+  function openEditTime(trade) {
+    setEditTimeTrade(trade);
+    setEditEntryTime(trade.entryTime || "");
+    setEditExitTime(trade.exitTime || "");
+  }
+
+  function saveEditTime() {
+    if (!editTimeTrade) return;
+    setTrades(prev => prev.map(t =>
+      t.id === editTimeTrade.id
+        ? { ...t, entryTime: editEntryTime, exitTime: editExitTime }
+        : t
+    ));
+    setEditTimeTrade(null);
+    setEditEntryTime("");
+    setEditExitTime("");
   }
 
   function openEditNotes(trade) {
@@ -882,7 +905,10 @@ function TradingJournal() {
                         <div style={{ marginBottom: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                             <p style={{ fontSize: 10, color: "#7fffb2", letterSpacing: ".1em" }}>NOTES</p>
-                            <button className="ghost" onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ padding: "4px 10px", fontSize: 9 }}>✎ Edit Notes</button>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button className="ghost" onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ padding: "4px 10px", fontSize: 9 }}>✎ Edit Notes</button>
+                              <button className="ghost" onClick={(e) => { e.stopPropagation(); openEditTime(t); }} style={{ padding: "4px 10px", fontSize: 9 }}>🕐 Edit Time</button>
+                            </div>
                           </div>
                           {t.notesData?.text && (
                             <p style={{ fontSize: 12, color: "#ccc", marginBottom: 10, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{t.notesData.text}</p>
@@ -1494,6 +1520,39 @@ function TradingJournal() {
         </div>
       )}
 
+      {/* EDIT TIME MODAL */}
+      {editTimeTrade && (
+        <div onClick={() => setEditTimeTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 450, width: "90%" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Edit Entry/Exit Times</p>
+              <button onClick={() => setEditTimeTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: "#999", marginBottom: 16 }}>
+                Trade: <span style={{ color: "#fff", fontWeight: 600 }}>{editTimeTrade.ticker}</span> | {formatDateDisplay(editTimeTrade.date)}
+                {editTimeTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 12 }}>
+                <div>
+                  <span className="lbl">Entry Time</span>
+                  <input type="time" value={editEntryTime} onChange={e => setEditEntryTime(e.target.value)} style={{ width: "100%" }} />
+                </div>
+                <div>
+                  <span className="lbl">Exit Time</span>
+                  <input type="time" value={editExitTime} onChange={e => setEditExitTime(e.target.value)} style={{ width: "100%" }} />
+                </div>
+              </div>
+              <p style={{ fontSize: 11, color: "#666", fontStyle: "italic" }}>Update the entry and exit times for this trade. Use 24-hour format (HH:MM).</p>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setEditTimeTrade(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="gbtn" onClick={saveEditTime} style={{ flex: 1 }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT NOTES MODAL */}
       {editNotesTrade && (
         <div onClick={() => setEditNotesTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
@@ -1704,9 +1763,14 @@ function TradingJournal() {
                       <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, margin: 0, marginBottom: 4 }} className={t.pnl >= 0 ? "pos" : "neg"}>
                         {t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}
                       </p>
-                      <button className="ghost" onClick={() => { openEditNotes(t); setSelectedCalendarDate(null); }} style={{ padding: "4px 10px", fontSize: 9 }}>
-                        📝 {t.notesData?.text || t.notesData?.images?.length ? "Edit" : "Add"} Notes
-                      </button>
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <button className="ghost" onClick={() => { openEditNotes(t); setSelectedCalendarDate(null); }} style={{ padding: "4px 10px", fontSize: 9 }}>
+                          📝 {t.notesData?.text || t.notesData?.images?.length ? "Edit" : "Add"} Notes
+                        </button>
+                        <button className="ghost" onClick={() => { openEditTime(t); setSelectedCalendarDate(null); }} style={{ padding: "4px 10px", fontSize: 9 }}>
+                          🕐 Edit Time
+                        </button>
+                      </div>
                     </div>
                   </div>
 
