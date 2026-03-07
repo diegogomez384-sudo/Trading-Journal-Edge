@@ -150,7 +150,9 @@ function parseTradovateCsv(text) {
         const extractTime = (timestamp) => {
           if (!timestamp) return "";
           const date = new Date(timestamp);
-          return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
         };
 
         const trade = {
