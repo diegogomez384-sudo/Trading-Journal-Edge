@@ -805,11 +805,17 @@ function TradingJournal() {
                       </svg>
 
                       {/* Date labels mapped similarly to bars/lines below the chart */}
-                      <div style={{ position: "absolute", bottom: -18, left: 0, right: 0 }}>
+                      <div style={{ position: "absolute", bottom: -18, left: 0, right: 0, paddingLeft: "2%", paddingRight: "2%" }}>
                         {cumulativePnl.map((d, i) => {
                           const showLabel = cumulativePnl.length <= 5 || i % Math.ceil(cumulativePnl.length / 5) === 0 || i === cumulativePnl.length - 1;
+                          const xPercent = (i / Math.max(1, cumulativePnl.length - 1)) * 100;
+                          // Adjust transform for first and last labels to prevent overflow
+                          let transform = "translateX(-50%)";
+                          if (i === 0) transform = "translateX(0)";
+                          if (i === cumulativePnl.length - 1) transform = "translateX(-100%)";
+
                           return showLabel ? (
-                            <div key={i} style={{ position: "absolute", left: `${(i / Math.max(1, cumulativePnl.length - 1)) * 100}%`, transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
+                            <div key={i} style={{ position: "absolute", left: `${xPercent}%`, transform, textAlign: "center", whiteSpace: "nowrap" }}>
                               <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
                                 {formatDateDisplay(d.date)}
                               </p>
