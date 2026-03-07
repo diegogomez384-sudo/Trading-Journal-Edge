@@ -731,43 +731,6 @@ function TradingJournal() {
                 {/* Spacer for bottom labels */}
                 <div style={{ height: 24 }} />
               </div>
-
-              <div className="card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <p className="lbl" style={{ margin: 0 }}>Recent Trades</p>
-                  <button className="ghost" onClick={() => setView("trades")}>View All \u2192</button>
-                </div>
-                {trades.slice(0, 6).map(t => (
-                  <div key={t.id} className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 1fr 60px 100px 30px 30px", alignItems: "center", padding: "11px 4px", gap: 12 }}>
-                    <div>
-                      <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff", fontSize: 14 }}>
-                        {t.ticker}
-                        {t.source === "csv" && <span className="tv-badge">CSV</span>}
-                      </p>
-                      <p style={{ fontSize: 10, color: "#9a9ab5" }}>
-                        {formatDateDisplay(t.date)}
-                        {t.entryTime && t.exitTime && <span style={{ marginLeft: 4, color: "#666" }}>• {t.entryTime}-{t.exitTime}</span>}
-                      </p>
-                    </div>
-                    <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }}>{t.direction}</span>
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      <span className="tag" onClick={(e) => { e.stopPropagation(); openEditStrategy(t); }} style={{ background: "#111120", color: "#ccc", cursor: "pointer", position: "relative" }} title="Click to edit strategy">
-                        {t.strategy}
-                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
-                      </span>
-                      <span className="tag" onClick={(e) => { e.stopPropagation(); openEditEmotion(t); }} style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}14`, cursor: "pointer" }} title="Click to edit emotion">
-                        {t.emotion}
-                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
-                      </span>
-                      <span className="tag" style={{ background: "#111120", color: "#bbb", fontSize: 9 }}>{t.session}</span>
-                    </div>
-                    <span style={{ fontSize: 11, color: "#a3a3ba" }}>{t.size}ct</span>
-                    <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, textAlign: "right" }} className={t.pnl >= 0 ? "pos" : "neg"}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
-                    <button onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 4, color: (t.notesData?.text || t.notesData?.images?.length) ? "#7fffb2" : "#666", opacity: 0.7, transition: "all 0.2s" }} onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.transform = "scale(1.1)"; }} onMouseLeave={(e) => { e.target.style.opacity = 0.7; e.target.style.transform = "scale(1)"; }} title="Edit notes">📝</button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
