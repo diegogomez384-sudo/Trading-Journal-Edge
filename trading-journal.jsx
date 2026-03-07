@@ -679,67 +679,67 @@ function TradingJournal() {
                     <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your daily net profit and loss">ⓘ</span>
                   </div>
 
-                <div style={{ display: "flex", height: 160, position: "relative" }}>
-                  {/* Y-axis labels */}
-                  <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
-                    <span>${maxDailyPnl >= 1000 ? (maxDailyPnl / 1000).toFixed(1) + 'k' : maxDailyPnl}</span>
-                    <span>${(maxDailyPnl * 0.8).toFixed(0)}</span>
-                    <span>${(maxDailyPnl * 0.6).toFixed(0)}</span>
-                    <span>${(maxDailyPnl * 0.4).toFixed(0)}</span>
-                    <span>${(maxDailyPnl * 0.2).toFixed(0)}</span>
-                    <span>$0</span>
-                  </div>
+                  <div style={{ display: "flex", height: 160, position: "relative" }}>
+                    {/* Y-axis labels */}
+                    <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
+                      <span>${maxDailyPnl >= 1000 ? (maxDailyPnl / 1000).toFixed(1) + 'k' : maxDailyPnl}</span>
+                      <span>${(maxDailyPnl * 0.8).toFixed(0)}</span>
+                      <span>${(maxDailyPnl * 0.6).toFixed(0)}</span>
+                      <span>${(maxDailyPnl * 0.4).toFixed(0)}</span>
+                      <span>${(maxDailyPnl * 0.2).toFixed(0)}</span>
+                      <span>$0</span>
+                    </div>
 
-                  {/* Chart and Grid */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative" }}>
+                    {/* Chart and Grid */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative" }}>
 
-                    {/* Horizontal grid lines */}
-                    {[1, 0.8, 0.6, 0.4, 0.2, 0].map((level, i) => (
-                      <div key={i} style={{ position: "absolute", bottom: `${level * 100}%`, left: 0, right: 0, height: 1, borderTop: "1px dashed #222235", opacity: 0.6 }} />
-                    ))}
+                      {/* Horizontal grid lines */}
+                      {[1, 0.8, 0.6, 0.4, 0.2, 0].map((level, i) => (
+                        <div key={i} style={{ position: "absolute", bottom: `${level * 100}%`, left: 0, right: 0, height: 1, borderTop: "1px dashed #222235", opacity: 0.6 }} />
+                      ))}
 
-                    <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "12%", padding: "0 4%", position: "relative", zIndex: 1, justifyContent: "space-around" }}>
-                      {dailyPnl.map((d, i) => {
-                        const h = Math.max(2, (Math.abs(d.pnl) / maxDailyPnl) * 100);
-                        const isPositive = d.pnl >= 0;
+                      <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: "12%", padding: "0 4%", position: "relative", zIndex: 1, justifyContent: "space-around" }}>
+                        {dailyPnl.map((d, i) => {
+                          const h = Math.max(2, (Math.abs(d.pnl) / maxDailyPnl) * 100);
+                          const isPositive = d.pnl >= 0;
 
-                        // Pick a few distinct dates to show underneath to match screenshot style
-                        const showLabel = dailyPnl.length <= 5 || i % Math.ceil(dailyPnl.length / 5) === 0 || i === dailyPnl.length - 1;
+                          // Pick a few distinct dates to show underneath to match screenshot style
+                          const showLabel = dailyPnl.length <= 5 || i % Math.ceil(dailyPnl.length / 5) === 0 || i === dailyPnl.length - 1;
 
-                        return (
-                          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", flex: 1, maxWidth: 30, position: "relative" }}>
-                            {isPositive && (
-                              <div
-                                style={{ width: "100%", height: `${h}%`, background: "#51A877", transition: "opacity 0.2s ease" }}
-                                title={`${formatDateDisplay(d.date)}: +$${d.pnl.toLocaleString()}`}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
-                              />
-                            )}
-                            {!isPositive && (
-                              /* Placeholder logic for negative layout if needed to look like screenshot where all are above 0 usually, but logic exists */
-                              <div
-                                style={{ width: "100%", height: `${h}%`, background: "#ff4466", transition: "opacity 0.2s ease", marginTop: "auto" }}
-                                title={`${formatDateDisplay(d.date)}: -$${Math.abs(d.pnl).toLocaleString()}`}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
-                              />
-                            )}
+                          return (
+                            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end", flex: 1, maxWidth: 30, position: "relative" }}>
+                              {isPositive && (
+                                <div
+                                  style={{ width: "100%", height: `${h}%`, background: "#51A877", transition: "opacity 0.2s ease" }}
+                                  title={`${formatDateDisplay(d.date)}: +$${d.pnl.toLocaleString()}`}
+                                  onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
+                                />
+                              )}
+                              {!isPositive && (
+                                /* Placeholder logic for negative layout if needed to look like screenshot where all are above 0 usually, but logic exists */
+                                <div
+                                  style={{ width: "100%", height: `${h}%`, background: "#ff4466", transition: "opacity 0.2s ease", marginTop: "auto" }}
+                                  title={`${formatDateDisplay(d.date)}: -$${Math.abs(d.pnl).toLocaleString()}`}
+                                  onMouseEnter={(e) => { e.currentTarget.style.opacity = 0.8; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.opacity = 1; }}
+                                />
+                              )}
 
-                            {/* Attached label underneath bar */}
-                            {showLabel && (
-                              <div style={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
-                                <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
-                                  {formatDateDisplay(d.date)}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {/* Attached label underneath bar */}
+                              {showLabel && (
+                                <div style={{ position: "absolute", bottom: -24, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
+                                  <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
+                                    {formatDateDisplay(d.date)}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
                   {/* Spacer for bottom labels */}
                   <div style={{ height: 24 }} />
                 </div>
@@ -747,69 +747,77 @@ function TradingJournal() {
                 {/* Cumulative P&L Chart */}
                 <div className="card">
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Cumulative P&L</p>
-                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your cumulative profit and loss">ⓘ</span>
+                    <p className="lbl" style={{ margin: 0, fontSize: 13, color: "#fff" }}>Daily net cumulative P&L</p>
+                    <span style={{ color: "#8a8aa8", cursor: "pointer", fontSize: 13 }} title="View your cumulative profit and loss over time">ⓘ</span>
                   </div>
 
                   <div style={{ display: "flex", height: 160, position: "relative" }}>
                     {/* Y-axis labels */}
-                    <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif" }}>
-                      <span>${maxCumPnl >= 1000 ? (maxCumPnl / 1000).toFixed(1) + 'k' : maxCumPnl.toFixed(0)}</span>
-                      <span>${(maxCumPnl * 0.5).toFixed(0)}</span>
-                      <span>$0</span>
-                      <span>${(-maxCumPnl * 0.5).toFixed(0)}</span>
-                      <span>${maxCumPnl >= 1000 ? (-maxCumPnl / 1000).toFixed(1) + 'k' : (-maxCumPnl).toFixed(0)}</span>
+                    <div style={{ width: 60, display: "flex", flexDirection: "column", justifyContent: "space-between", paddingRight: 10, alignItems: "flex-end", color: "#666", fontSize: 11, fontFamily: "Inter, sans-serif", zIndex: 2 }}>
+                      {[1, 0.5, 0, -0.5, -1].map((level, i) => (
+                        <span key={i}>{level < 0 ? "-" : ""}${Math.abs(maxCumPnl * level).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                      ))}
                     </div>
 
-                    {/* Chart */}
-                    <div style={{ flex: 1, position: "relative", paddingTop: 10, paddingBottom: 10 }}>
-                      {/* Zero line */}
-                      <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "#666", opacity: 0.5 }} />
+                    {/* Chart and Grid */}
+                    <div style={{ flex: 1, position: "relative", paddingTop: 5, paddingBottom: 5 }}>
 
-                      {/* Line chart */}
-                      <svg width="100%" height="100%" style={{ position: "relative" }}>
+                      {/* Horizontal grid lines */}
+                      {[1, 0.5, 0, -0.5, -1].map((level, i) => (
+                        <div key={i} style={{ position: "absolute", top: `${(1 - level) / 2 * 100}%`, left: 0, right: 0, height: 1, borderTop: "1px dashed #222235", opacity: 0.6 }} />
+                      ))}
+
+                      {/* Line chart with filled area */}
+                      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "relative", zIndex: 1, overflow: "visible" }}>
+                        <defs>
+                          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#51A877" stopOpacity="0.5" />
+                            <stop offset="100%" stopColor="#51A877" stopOpacity="0.0" />
+                          </linearGradient>
+                          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#00ddff" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Area Polygon */}
+                        <polygon
+                          points={`0,50 ${cumulativePnl.map((d, i) => {
+                            const x = (i / Math.max(1, cumulativePnl.length - 1)) * 100;
+                            const y = 50 - ((d.cumPnl / maxCumPnl) * 50);
+                            return `${x},${y}`;
+                          }).join(' ')} 100,50`}
+                          fill="url(#areaGrad)"
+                        />
+
+                        {/* Top Line */}
                         <polyline
                           points={cumulativePnl.map((d, i) => {
-                            const x = (i / (cumulativePnl.length - 1)) * 100;
-                            const y = 50 - ((d.cumPnl / maxCumPnl) * 40);
-                            return `${x}%,${y}%`;
+                            const x = (i / Math.max(1, cumulativePnl.length - 1)) * 100;
+                            const y = 50 - ((d.cumPnl / maxCumPnl) * 50);
+                            return `${x},${y}`;
                           }).join(' ')}
                           fill="none"
-                          stroke="#7fffb2"
+                          stroke="url(#lineGrad)"
                           strokeWidth="2"
-                          style={{ filter: "drop-shadow(0 0 4px rgba(127, 255, 178, 0.5))" }}
+                          vectorEffect="non-scaling-stroke"
                         />
-                        {cumulativePnl.map((d, i) => {
-                          const x = (i / (cumulativePnl.length - 1)) * 100;
-                          const y = 50 - ((d.cumPnl / maxCumPnl) * 40);
-                          const showLabel = cumulativePnl.length <= 5 || i % Math.ceil(cumulativePnl.length / 5) === 0 || i === cumulativePnl.length - 1;
-                          return (
-                            <g key={i}>
-                              <circle
-                                cx={`${x}%`}
-                                cy={`${y}%`}
-                                r="3"
-                                fill={d.cumPnl >= 0 ? "#7fffb2" : "#ff4466"}
-                                style={{ cursor: "pointer" }}
-                              >
-                                <title>{formatDateDisplay(d.date)}: {d.cumPnl >= 0 ? '+' : ''}${d.cumPnl.toLocaleString()}</title>
-                              </circle>
-                            </g>
-                          );
-                        })}
                       </svg>
 
-                      {/* Date labels */}
-                      <div style={{ position: "absolute", bottom: -24, left: 0, right: 0, display: "flex", justifyContent: "space-between", paddingLeft: "2%", paddingRight: "2%" }}>
+                      {/* Date labels mapped similarly to bars/lines below the chart */}
+                      <div style={{ position: "absolute", bottom: -18, left: 0, right: 0 }}>
                         {cumulativePnl.map((d, i) => {
                           const showLabel = cumulativePnl.length <= 5 || i % Math.ceil(cumulativePnl.length / 5) === 0 || i === cumulativePnl.length - 1;
                           return showLabel ? (
-                            <p key={i} style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
-                              {formatDateDisplay(d.date)}
-                            </p>
-                          ) : <span key={i} />;
+                            <div key={i} style={{ position: "absolute", left: `${(i / Math.max(1, cumulativePnl.length - 1)) * 100}%`, transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
+                              <p style={{ fontSize: 10, color: "#8a8aa8", margin: 0 }}>
+                                {formatDateDisplay(d.date)}
+                              </p>
+                            </div>
+                          ) : null;
                         })}
                       </div>
+
                     </div>
                   </div>
 
