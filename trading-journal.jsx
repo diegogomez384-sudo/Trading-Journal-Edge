@@ -856,7 +856,6 @@ function TradingJournal() {
                         </p>
                         <p style={{ fontSize: 9, color: "#9595b0" }}>
                           {formatDateDisplay(t.date)}
-                          {t.entryTime && t.exitTime && <span style={{ marginLeft: 4, color: "#666" }}>• {t.entryTime}-{t.exitTime}</span>}
                         </p>
                       </div>
                       <span className="tag" style={{ background: t.direction === "Long" ? "rgba(127,255,178,.1)" : "rgba(255,68,102,.1)", color: t.direction === "Long" ? "#7fffb2" : "#ff4466", width: "fit-content" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.direction}</span>
@@ -901,6 +900,8 @@ function TradingJournal() {
                           <span>Point value: <span style={{ color: "#ddd" }}>${POINT_VALUES[t.market]?.toLocaleString()}</span></span>
                           <span>Move: <span style={{ color: "#ddd" }}>{Math.abs(t.exit - t.entry).toFixed(2)} pts</span></span>
                           <span>Side: <span style={{ color: t.direction === "Long" ? "#7fffb2" : "#ff4466" }}>{t.direction}</span></span>
+                          {t.entryTime && <span>Entry Time: <span style={{ color: "#ddd" }}>{t.entryTime}</span></span>}
+                          {t.exitTime && <span>Exit Time: <span style={{ color: "#ddd" }}>{t.exitTime}</span></span>}
                           {t.source === "csv" && <span style={{ color: "#00ddff" }}>CSV Import</span>}
                         </div>
 
@@ -1689,10 +1690,12 @@ function TradingJournal() {
                         </span>
                       </div>
                       <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#999" }}>
-                        <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}{t.entryTime && ` @ ${t.entryTime}`}</span></span>
-                        <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}{t.exitTime && ` @ ${t.exitTime}`}</span></span>
+                        <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}</span></span>
+                        <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}</span></span>
                         <span>Size: <span style={{ color: "#ddd" }}>{t.size}ct</span></span>
                         <span>Session: <span style={{ color: "#ddd" }}>{t.session}</span></span>
+                        {t.entryTime && <span>Entry Time: <span style={{ color: "#ddd" }}>{t.entryTime}</span></span>}
+                        {t.exitTime && <span>Exit Time: <span style={{ color: "#ddd" }}>{t.exitTime}</span></span>}
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
