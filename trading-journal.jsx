@@ -660,8 +660,7 @@ function TradingJournal() {
         <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="10" width="4" height="10" fill="#7fffb2" rx="1" /><rect x="9" y="5" width="4" height="15" fill="#7fffb2" opacity=".7" rx="1" /><rect x="16" y="1" width="4" height="19" fill="#7fffb2" opacity=".4" rx="1" /></svg>
-            <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>EDGE</span>
-            <span style={{ color: "#6c6c8c", fontSize: 11, letterSpacing: ".05em" }}>FUTURES JOURNAL</span>
+            <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>TRACKR</span>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
             {[["dashboard", "Dashboard"], ["trades", "Trades"], ["calendar", "Calendar"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
