@@ -152,7 +152,8 @@ function parseTradovateCsv(text) {
           const date = new Date(timestamp);
           const hours = String(date.getHours()).padStart(2, '0');
           const minutes = String(date.getMinutes()).padStart(2, '0');
-          return `${hours}:${minutes}`;
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${hours}:${minutes}:${seconds}`;
         };
 
         const trade = {
@@ -215,14 +216,14 @@ function TradingJournal() {
         if (!migrated.entryTime || !migrated.exitTime) {
           // Default times based on session
           const sessionTimes = {
-            "RTH Open": { entry: "09:30", exit: "10:15" },
-            "RTH Mid": { entry: "11:00", exit: "13:30" },
-            "RTH Close": { entry: "15:00", exit: "15:45" },
-            "Pre-Market": { entry: "08:00", exit: "09:25" },
-            "Overnight": { entry: "18:00", exit: "20:30" }
+            "RTH Open": { entry: "09:30:00", exit: "10:15:00" },
+            "RTH Mid": { entry: "11:00:00", exit: "13:30:00" },
+            "RTH Close": { entry: "15:00:00", exit: "15:45:00" },
+            "Pre-Market": { entry: "08:00:00", exit: "09:25:00" },
+            "Overnight": { entry: "18:00:00", exit: "20:30:00" }
           };
 
-          const defaultTime = sessionTimes[migrated.session] || { entry: "09:30", exit: "15:00" };
+          const defaultTime = sessionTimes[migrated.session] || { entry: "09:30:00", exit: "15:00:00" };
           if (!migrated.entryTime) migrated.entryTime = defaultTime.entry;
           if (!migrated.exitTime) migrated.exitTime = defaultTime.exit;
         }
@@ -1344,8 +1345,8 @@ function TradingJournal() {
               <div><span className="lbl">Contracts</span><input type="number" min="1" placeholder="1" value={form.size} onChange={e => setForm(p => ({ ...p, size: e.target.value }))} /></div>
               <div><span className="lbl">Entry Price</span><input type="number" step="0.25" placeholder="0.00" value={form.entry} onChange={e => setForm(p => ({ ...p, entry: e.target.value }))} /></div>
               <div><span className="lbl">Exit Price</span><input type="number" step="0.25" placeholder="0.00" value={form.exit} onChange={e => setForm(p => ({ ...p, exit: e.target.value }))} /></div>
-              <div><span className="lbl">Entry Time</span><input type="time" placeholder="HH:MM" value={form.entryTime} onChange={e => setForm(p => ({ ...p, entryTime: e.target.value }))} /></div>
-              <div><span className="lbl">Exit Time</span><input type="time" placeholder="HH:MM" value={form.exitTime} onChange={e => setForm(p => ({ ...p, exitTime: e.target.value }))} /></div>
+              <div><span className="lbl">Entry Time</span><input type="time" step="1" placeholder="HH:MM:SS" value={form.entryTime} onChange={e => setForm(p => ({ ...p, entryTime: e.target.value }))} /></div>
+              <div><span className="lbl">Exit Time</span><input type="time" step="1" placeholder="HH:MM:SS" value={form.exitTime} onChange={e => setForm(p => ({ ...p, exitTime: e.target.value }))} /></div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span className="lbl" style={{ margin: 0 }}>Strategy</span>
@@ -1536,14 +1537,14 @@ function TradingJournal() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 12 }}>
                 <div>
                   <span className="lbl">Entry Time</span>
-                  <input type="time" value={editEntryTime} onChange={e => setEditEntryTime(e.target.value)} style={{ width: "100%" }} />
+                  <input type="time" step="1" value={editEntryTime} onChange={e => setEditEntryTime(e.target.value)} style={{ width: "100%" }} />
                 </div>
                 <div>
                   <span className="lbl">Exit Time</span>
-                  <input type="time" value={editExitTime} onChange={e => setEditExitTime(e.target.value)} style={{ width: "100%" }} />
+                  <input type="time" step="1" value={editExitTime} onChange={e => setEditExitTime(e.target.value)} style={{ width: "100%" }} />
                 </div>
               </div>
-              <p style={{ fontSize: 11, color: "#666", fontStyle: "italic" }}>Update the entry and exit times for this trade. Use 24-hour format (HH:MM).</p>
+              <p style={{ fontSize: 11, color: "#666", fontStyle: "italic" }}>Update the entry and exit times for this trade. Use 24-hour format (HH:MM:SS).</p>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setEditTimeTrade(null)} style={{ flex: 1 }}>Cancel</button>
