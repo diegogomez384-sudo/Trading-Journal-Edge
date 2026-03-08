@@ -663,7 +663,7 @@ function TradingJournal() {
             <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>TRACKR</span>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["calendar", "Calendar"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
           </div>
@@ -856,6 +856,147 @@ function TradingJournal() {
                   <div style={{ height: 24 }} />
                 </div>
               </div>
+
+              {/* CALENDAR */}
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <div>
+                    <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Trading Calendar</p>
+                    <p style={{ color: "#999", fontSize: 11, letterSpacing: ".05em" }}>Daily performance breakdown</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>←</button>
+                    <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#fff", minWidth: 180, textAlign: "center" }}>
+                      {calendarDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                    </span>
+                    <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>→</button>
+                    <button className="ghost" onClick={() => setCalendarDate(new Date())}>Today</button>
+                  </div>
+                </div>
+
+                <div className="card" style={{ padding: 20 }}>
+                  {(() => {
+                    const year = calendarDate.getFullYear();
+                    const month = calendarDate.getMonth();
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                    // Group trades by date
+                    const tradesByDate = {};
+                    trades.forEach(t => {
+                      // Normalize date to YYYY-MM-DD format
+                      let dateKey = t.date;
+                      if (dateKey && dateKey.includes('T')) {
+                        dateKey = dateKey.split('T')[0];
+                      }
+                      if (dateKey && dateKey.includes(' ')) {
+                        dateKey = dateKey.split(' ')[0];
+                      }
+                      if (!dateKey) return;
+
+                      if (!tradesByDate[dateKey]) {
+                        tradesByDate[dateKey] = [];
+                      }
+                      tradesByDate[dateKey].push(t);
+                    });
+
+                    // Calculate stats for each date
+                    const dateStats = {};
+                    Object.keys(tradesByDate).forEach(dateKey => {
+                      const dayTrades = tradesByDate[dateKey];
+                      const wins = dayTrades.filter(t => t.pnl > 0).length;
+                      const totalPnl = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
+                      const winRate = dayTrades.length > 0 ? Math.round((wins / dayTrades.length) * 100) : 0;
+                      dateStats[dateKey] = {
+                        count: dayTrades.length,
+                        pnl: totalPnl,
+                        winRate: winRate
+                      };
+                    });
+
+                    const days = [];
+                    // Add empty cells for days before month starts
+                    for (let i = 0; i < firstDay; i++) {
+                      days.push(<div key={`empty-${i}`} style={{ padding: 8, minHeight: 90 }} />);
+                    }
+
+                    // Add calendar days
+                    const todayDate = getTodayLocalDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const stats = dateStats[dateKey];
+                      const isToday = todayDate === dateKey;
+
+                      days.push(
+                        <div
+                          key={day}
+                          onClick={() => {
+                            if (stats) {
+                              setSelectedCalendarDate({
+                                date: dateKey,
+                                trades: tradesByDate[dateKey],
+                                stats: stats
+                              });
+                            }
+                          }}
+                          style={{
+                            padding: 8,
+                            minHeight: 90,
+                            background: stats ? (stats.pnl >= 0 ? "rgba(127,255,178,0.08)" : "rgba(255,68,102,0.08)") : "#09090f",
+                            border: isToday ? "2px solid #7fffb2" : "1px solid #0f0f1e",
+                            borderRadius: 6,
+                            position: "relative",
+                            cursor: stats ? "pointer" : "default",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseEnter={(e) => { if (stats) e.currentTarget.style.transform = "scale(1.02)"; }}
+                          onMouseLeave={(e) => { if (stats) e.currentTarget.style.transform = "scale(1)"; }}
+                        >
+                          <div style={{ fontSize: 11, color: isToday ? "#7fffb2" : "#555", marginBottom: 6, fontWeight: isToday ? 700 : 400 }}>{day}</div>
+                          {stats && (
+                            <div style={{ fontSize: 10 }}>
+                              <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 13, marginBottom: 4 }} className={stats.pnl >= 0 ? "pos" : "neg"}>
+                                {stats.pnl >= 0 ? "+" : ""}${stats.pnl.toLocaleString()}
+                              </div>
+                              <div style={{ color: "#666", marginBottom: 2 }}>{stats.count} trade{stats.count !== 1 ? 's' : ''}</div>
+                              <div style={{ color: stats.winRate >= 50 ? "#7fffb2" : "#ff4466", fontSize: 9 }}>{stats.winRate}% win</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 8 }}>
+                          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+                            <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#666", letterSpacing: ".1em", padding: "8px 0" }}>{d}</div>
+                          ))}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+                          {days}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Legend */}
+                <div style={{ display: "flex", gap: 20, marginTop: 16, fontSize: 11, color: "#666", justifyContent: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 12, height: 12, background: "rgba(127,255,178,0.08)", border: "1px solid rgba(127,255,178,0.3)", borderRadius: 2 }} />
+                    <span>Profitable Day</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 12, height: 12, background: "rgba(255,68,102,0.08)", border: "1px solid rgba(255,68,102,0.3)", borderRadius: 2 }} />
+                    <span>Loss Day</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 12, height: 12, border: "2px solid #7fffb2", borderRadius: 2 }} />
+                    <span>Today</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1028,149 +1169,6 @@ function TradingJournal() {
           )}
 
           {/* AI COACH */}
-          {/* CALENDAR */}
-          {view === "calendar" && (
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <div>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Trading Calendar</p>
-                  <p style={{ color: "#999", fontSize: 11, letterSpacing: ".05em" }}>Daily performance breakdown</p>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>←</button>
-                  <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#fff", minWidth: 180, textAlign: "center" }}>
-                    {calendarDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-                  </span>
-                  <button className="ghost" onClick={() => setCalendarDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>→</button>
-                  <button className="ghost" onClick={() => setCalendarDate(new Date())}>Today</button>
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 20 }}>
-                {(() => {
-                  const year = calendarDate.getFullYear();
-                  const month = calendarDate.getMonth();
-                  const firstDay = new Date(year, month, 1).getDay();
-                  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-                  // Group trades by date
-                  const tradesByDate = {};
-                  trades.forEach(t => {
-                    // Normalize date to YYYY-MM-DD format
-                    let dateKey = t.date;
-                    if (dateKey && dateKey.includes('T')) {
-                      dateKey = dateKey.split('T')[0];
-                    }
-                    if (dateKey && dateKey.includes(' ')) {
-                      dateKey = dateKey.split(' ')[0];
-                    }
-                    if (!dateKey) return;
-
-                    if (!tradesByDate[dateKey]) {
-                      tradesByDate[dateKey] = [];
-                    }
-                    tradesByDate[dateKey].push(t);
-                  });
-
-                  // Calculate stats for each date
-                  const dateStats = {};
-                  Object.keys(tradesByDate).forEach(dateKey => {
-                    const dayTrades = tradesByDate[dateKey];
-                    const wins = dayTrades.filter(t => t.pnl > 0).length;
-                    const totalPnl = dayTrades.reduce((sum, t) => sum + t.pnl, 0);
-                    const winRate = dayTrades.length > 0 ? Math.round((wins / dayTrades.length) * 100) : 0;
-                    dateStats[dateKey] = {
-                      count: dayTrades.length,
-                      pnl: totalPnl,
-                      winRate: winRate
-                    };
-                  });
-
-                  const days = [];
-                  // Add empty cells for days before month starts
-                  for (let i = 0; i < firstDay; i++) {
-                    days.push(<div key={`empty-${i}`} style={{ padding: 8, minHeight: 90 }} />);
-                  }
-
-                  // Add calendar days
-                  const todayDate = getTodayLocalDate();
-                  for (let day = 1; day <= daysInMonth; day++) {
-                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const stats = dateStats[dateKey];
-                    const isToday = todayDate === dateKey;
-
-                    days.push(
-                      <div
-                        key={day}
-                        onClick={() => {
-                          if (stats) {
-                            setSelectedCalendarDate({
-                              date: dateKey,
-                              trades: tradesByDate[dateKey],
-                              stats: stats
-                            });
-                          }
-                        }}
-                        style={{
-                          padding: 8,
-                          minHeight: 90,
-                          background: stats ? (stats.pnl >= 0 ? "rgba(127,255,178,0.08)" : "rgba(255,68,102,0.08)") : "#09090f",
-                          border: isToday ? "2px solid #7fffb2" : "1px solid #0f0f1e",
-                          borderRadius: 6,
-                          position: "relative",
-                          cursor: stats ? "pointer" : "default",
-                          transition: "all 0.2s"
-                        }}
-                        onMouseEnter={(e) => { if (stats) e.currentTarget.style.transform = "scale(1.02)"; }}
-                        onMouseLeave={(e) => { if (stats) e.currentTarget.style.transform = "scale(1)"; }}
-                      >
-                        <div style={{ fontSize: 11, color: isToday ? "#7fffb2" : "#555", marginBottom: 6, fontWeight: isToday ? 700 : 400 }}>{day}</div>
-                        {stats && (
-                          <div style={{ fontSize: 10 }}>
-                            <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 13, marginBottom: 4 }} className={stats.pnl >= 0 ? "pos" : "neg"}>
-                              {stats.pnl >= 0 ? "+" : ""}${stats.pnl.toLocaleString()}
-                            </div>
-                            <div style={{ color: "#666", marginBottom: 2 }}>{stats.count} trade{stats.count !== 1 ? 's' : ''}</div>
-                            <div style={{ color: stats.winRate >= 50 ? "#7fffb2" : "#ff4466", fontSize: 9 }}>{stats.winRate}% win</div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8, marginBottom: 8 }}>
-                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-                          <div key={d} style={{ textAlign: "center", fontSize: 10, color: "#666", letterSpacing: ".1em", padding: "8px 0" }}>{d}</div>
-                        ))}
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
-                        {days}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Legend */}
-              <div style={{ display: "flex", gap: 20, marginTop: 16, fontSize: 11, color: "#666", justifyContent: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 12, height: 12, background: "rgba(127,255,178,0.08)", border: "1px solid rgba(127,255,178,0.3)", borderRadius: 2 }} />
-                  <span>Profitable Day</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 12, height: 12, background: "rgba(255,68,102,0.08)", border: "1px solid rgba(255,68,102,0.3)", borderRadius: 2 }} />
-                  <span>Loss Day</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 12, height: 12, border: "2px solid #7fffb2", borderRadius: 2 }} />
-                  <span>Today</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           {view === "ai-coach" && (
             <div>
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
