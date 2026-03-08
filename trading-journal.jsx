@@ -658,9 +658,19 @@ function TradingJournal() {
       <div style={{ background: "#06060d", minHeight: "100vh", filter: isDark ? "none" : "invert(1) hue-rotate(180deg)", transition: "filter 0.3s ease" }}>
         {/* HEADER */}
         <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="10" width="4" height="10" fill="#7fffb2" rx="1" /><rect x="9" y="5" width="4" height="15" fill="#7fffb2" opacity=".7" rx="1" /><rect x="16" y="1" width="4" height="19" fill="#7fffb2" opacity=".4" rx="1" /></svg>
-            <span style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 16, letterSpacing: ".15em", color: "#fff" }}>TRACKR</span>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ fontFamily: "'Courier New', Courier, monospace", fontWeight: 700, fontSize: 26, letterSpacing: "1px" }}>
+              <span style={{ color: "#e45e54" }}>u</span>
+              <span style={{ color: "#f28b57" }}>l</span>
+              <span style={{ color: "#fabf53" }}>t</span>
+              <span style={{ color: "#8bc268" }}>r</span>
+              <span style={{ color: "#7ca5d4" }}>a</span>
+              <span style={{ color: "#a08ecc" }}>t</span>
+              <span style={{ color: "#c581b6" }}>r</span>
+              <span style={{ color: "#e45e54" }}>a</span>
+              <span style={{ color: "#f28b57" }}>c</span>
+              <span style={{ color: "#fabf53" }}>k</span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
             {[["dashboard", "Dashboard"], ["trades", "Trades"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
