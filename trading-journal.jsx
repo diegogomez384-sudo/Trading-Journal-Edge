@@ -1020,7 +1020,7 @@ function TradingJournal() {
               </div>
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Cts", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
                 </div>
                 {filtered.map(t => (
                   <div key={t.id}>
@@ -1761,7 +1761,7 @@ function TradingJournal() {
                       <div style={{ display: "flex", gap: 16, fontSize: 11, color: "#999" }}>
                         <span>Entry: <span style={{ color: "#ddd" }}>{t.entry}</span></span>
                         <span>Exit: <span style={{ color: "#ddd" }}>{t.exit}</span></span>
-                        <span>Size: <span style={{ color: "#ddd" }}>{t.size}ct</span></span>
+                        <span>Size: <span style={{ color: "#ddd" }}>{t.size}</span></span>
                         <span>Session: <span style={{ color: "#ddd" }}>{t.session}</span></span>
                         {t.entryTime && <span>Entry Time: <span style={{ color: "#ddd" }}>{t.entryTime}</span></span>}
                         {t.exitTime && <span>Exit Time: <span style={{ color: "#ddd" }}>{t.exitTime}</span></span>}
