@@ -298,9 +298,15 @@ function TradingJournal() {
   // Save journal entries to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('tradingJournalEntries', JSON.stringify(journalEntries));
+      const dataToSave = JSON.stringify(journalEntries);
+      console.log('Saving journal entries, size:', dataToSave.length, 'bytes');
+      localStorage.setItem('tradingJournalEntries', dataToSave);
+      console.log('Journal entries saved successfully');
     } catch (error) {
       console.error('Failed to save journal entries to localStorage:', error);
+      if (error.name === 'QuotaExceededError') {
+        alert('Storage quota exceeded. Your journal entries may be too large. Consider using fewer or smaller images.');
+      }
     }
   }, [journalEntries]);
 
@@ -341,8 +347,15 @@ function TradingJournal() {
   const [journalEntries, setJournalEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalEntries');
-      return saved ? JSON.parse(saved) : {};
+      console.log('Loading journal entries from localStorage:', saved ? 'found data' : 'no data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('Loaded journal entries:', Object.keys(parsed).length, 'dates');
+        return parsed;
+      }
+      return {};
     } catch (error) {
+      console.error('Failed to load journal entries:', error);
       return {};
     }
   });
