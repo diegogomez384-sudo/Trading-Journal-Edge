@@ -295,6 +295,15 @@ function TradingJournal() {
     }
   }, [customStrategies]);
 
+  // Save journal entries to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalEntries', JSON.stringify(journalEntries));
+    } catch (error) {
+      console.error('Failed to save journal entries to localStorage:', error);
+    }
+  }, [journalEntries]);
+
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
   const [importDragOver, setImportDragOver] = useState(false);
@@ -327,6 +336,20 @@ function TradingJournal() {
 
   // --- Calendar date modal state ---
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null); // { date, trades }
+
+  // --- Journal state ---
+  const [journalEntries, setJournalEntries] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalEntries');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      return {};
+    }
+  });
+  const [selectedJournalDate, setSelectedJournalDate] = useState(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  });
 
   function handleCsvFile(file) {
     if (!file) return;
@@ -673,7 +696,7 @@ function TradingJournal() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
           </div>
@@ -1097,6 +1120,204 @@ function TradingJournal() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* JOURNAL */}
+          {view === "journal" && (
+            <div>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Daily Trading Journal</p>
+                <p style={{ color: "#aaa", fontSize: 12 }}>Document your pre-market plans, trade ideas, and daily reflections</p>
+              </div>
+
+              {/* Date Selector */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span className="lbl" style={{ marginBottom: 0 }}>Journal Date</span>
+                  <input
+                    type="date"
+                    value={selectedJournalDate}
+                    onChange={(e) => setSelectedJournalDate(e.target.value)}
+                    style={{ width: 200 }}
+                  />
+                </div>
+              </div>
+
+              {/* Journal Entry */}
+              <div className="card">
+                <p style={{ fontFamily: "Syne,sans-serif", fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 16 }}>
+                  {formatDateDisplay(selectedJournalDate)}
+                </p>
+
+                {/* Notes Section */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <p className="lbl" style={{ margin: 0 }}>Pre-Market Plan & Notes</p>
+                    <button
+                      className="ghost"
+                      onClick={() => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = '• ';
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                      }}
+                      style={{ padding: "4px 10px", fontSize: 9 }}
+                    >
+                      • Add Bullet
+                    </button>
+                  </div>
+                  <textarea
+                    value={journalEntries[selectedJournalDate]?.text || ''}
+                    onChange={(e) => {
+                      setJournalEntries(prev => ({
+                        ...prev,
+                        [selectedJournalDate]: {
+                          ...prev[selectedJournalDate],
+                          text: e.target.value,
+                          images: prev[selectedJournalDate]?.images || []
+                        }
+                      }));
+                    }}
+                    placeholder="Enter your pre-market analysis, trade plans, market observations..."
+                    style={{
+                      width: "100%",
+                      minHeight: 200,
+                      resize: "vertical",
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 12,
+                      lineHeight: 1.6
+                    }}
+                  />
+                </div>
+
+                {/* Screenshots Section */}
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <p className="lbl" style={{ margin: 0 }}>Screenshots & Charts</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                      id="journal-image-upload"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files);
+                        files.forEach(file => {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const newImage = {
+                              id: Date.now() + Math.random(),
+                              dataUrl: event.target.result,
+                              name: file.name
+                            };
+                            setJournalEntries(prev => ({
+                              ...prev,
+                              [selectedJournalDate]: {
+                                text: prev[selectedJournalDate]?.text || '',
+                                images: [...(prev[selectedJournalDate]?.images || []), newImage]
+                              }
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        e.target.value = '';
+                      }}
+                    />
+                    <button
+                      className="ghost"
+                      onClick={() => document.getElementById('journal-image-upload').click()}
+                      style={{ padding: "4px 10px", fontSize: 9 }}
+                    >
+                      📷 Upload Images
+                    </button>
+                  </div>
+
+                  {/* Display uploaded images */}
+                  {journalEntries[selectedJournalDate]?.images?.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+                      {journalEntries[selectedJournalDate].images.map(img => (
+                        <div key={img.id} style={{ position: "relative", borderRadius: 6, overflow: "hidden", border: "1px solid #181828" }}>
+                          <img
+                            src={img.dataUrl}
+                            alt={img.name}
+                            style={{ width: "100%", height: 150, objectFit: "cover" }}
+                          />
+                          <button
+                            onClick={() => {
+                              setJournalEntries(prev => ({
+                                ...prev,
+                                [selectedJournalDate]: {
+                                  ...prev[selectedJournalDate],
+                                  images: prev[selectedJournalDate].images.filter(i => i.id !== img.id)
+                                }
+                              }));
+                            }}
+                            style={{
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              background: "rgba(255, 68, 102, 0.9)",
+                              border: "none",
+                              color: "#fff",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              cursor: "pointer",
+                              fontSize: 16,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 0,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                            }}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Historical Entries */}
+              {Object.keys(journalEntries).length > 1 && (
+                <div style={{ marginTop: 20 }}>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 12 }}>Recent Journal Entries</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {Object.keys(journalEntries)
+                      .filter(date => date !== selectedJournalDate)
+                      .sort((a, b) => new Date(b) - new Date(a))
+                      .slice(0, 5)
+                      .map(date => (
+                        <div
+                          key={date}
+                          className="card"
+                          style={{ padding: 16, cursor: "pointer" }}
+                          onClick={() => setSelectedJournalDate(date)}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <p style={{ fontFamily: "Syne,sans-serif", fontSize: 14, fontWeight: 700, color: "#7fffb2", margin: 0 }}>
+                              {formatDateDisplay(date)}
+                            </p>
+                            <span style={{ fontSize: 11, color: "#666" }}>
+                              {journalEntries[date]?.images?.length || 0} image{journalEntries[date]?.images?.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          {journalEntries[date]?.text && (
+                            <p style={{ fontSize: 11, color: "#999", marginTop: 8, lineHeight: 1.6 }}>
+                              {journalEntries[date].text.substring(0, 150)}{journalEntries[date].text.length > 150 ? '...' : ''}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
