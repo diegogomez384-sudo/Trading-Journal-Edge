@@ -1092,7 +1092,7 @@ function TradingJournal() {
                           {t.notesData?.images?.length > 0 && (
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8, marginTop: 10 }}>
                               {t.notesData.images.map(img => (
-                                <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #181828" }} />
+                                <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #181828", cursor: "pointer" }} onClick={() => setPreviewImage(img)} />
                               ))}
                             </div>
                           )}
@@ -1925,8 +1925,10 @@ function TradingJournal() {
                               maxHeight: 400,
                               objectFit: "contain",
                               borderRadius: 4,
-                              marginBottom: 8
+                              marginBottom: 8,
+                              cursor: "pointer"
                             }}
+                            onClick={() => setPreviewImage(img)}
                           />
                           <p style={{ fontSize: 10, color: "#666", marginBottom: 0 }}>Screenshot {index + 1}: {img.name}</p>
                           <button
@@ -2073,7 +2075,7 @@ function TradingJournal() {
                       {t.notesData?.images?.length > 0 && (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8 }}>
                           {t.notesData.images.map(img => (
-                            <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #222235" }} />
+                            <img key={img.id} src={img.dataUrl} alt={img.name} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 4, border: "1px solid #222235", cursor: "pointer" }} onClick={() => setPreviewImage(img)} />
                           ))}
                         </div>
                       )}
