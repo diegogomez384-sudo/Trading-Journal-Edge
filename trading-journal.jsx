@@ -295,34 +295,25 @@ function TradingJournal() {
     }
   }, [customStrategies]);
 
-  // Save journal entries to localStorage (skip initial mount to prevent overwriting)
-  const isInitialMountJournal = useRef(true);
-  useEffect(() => {
-    if (isInitialMountJournal.current) {
-      isInitialMountJournal.current = false;
-      console.log('Skipping initial save of journal entries');
-      return;
-    }
-
+  // Manual save function for journal entries
+  const saveJournalEntries = () => {
     try {
       const dataToSave = JSON.stringify(journalEntries);
-      console.log('Saving journal entries:', journalEntries);
-      console.log('Saving journal entries, size:', dataToSave.length, 'bytes');
+      console.log('Manually saving journal entries:', journalEntries);
       console.log('Number of dates in journal:', Object.keys(journalEntries).length);
       localStorage.setItem('tradingJournalEntries', dataToSave);
-      console.log('Journal entries saved successfully');
+      console.log('Journal entries saved successfully to localStorage');
 
-      // Verify what was actually saved
+      // Verify
       const verified = localStorage.getItem('tradingJournalEntries');
       const parsedVerify = JSON.parse(verified);
-      console.log('Verified saved data has', Object.keys(parsedVerify).length, 'dates');
+      console.log('Verified: localStorage now has', Object.keys(parsedVerify).length, 'dates');
+      alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
     } catch (error) {
-      console.error('Failed to save journal entries to localStorage:', error);
-      if (error.name === 'QuotaExceededError') {
-        alert('Storage quota exceeded. Your journal entries may be too large. Consider using fewer or smaller images.');
-      }
+      console.error('Failed to save journal entries:', error);
+      alert('Failed to save journal: ' + error.message);
     }
-  }, [journalEntries]);
+  };
 
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
@@ -1170,6 +1161,21 @@ function TradingJournal() {
                     onChange={(e) => setSelectedJournalDate(e.target.value)}
                     style={{ width: 200 }}
                   />
+                  <button
+                    onClick={saveJournalEntries}
+                    style={{
+                      background: "#7fffb2",
+                      color: "#111",
+                      padding: "8px 20px",
+                      borderRadius: 6,
+                      border: "none",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      fontSize: 13
+                    }}
+                  >
+                    💾 Save Journal
+                  </button>
                 </div>
               </div>
 
