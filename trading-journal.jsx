@@ -344,11 +344,28 @@ function TradingJournal() {
 
     // Set saving status
     setJournalSaveStatus('saving');
+    console.log('Journal changed, scheduling auto-save in 3 seconds...');
 
     // Set new timeout to save after 3 seconds of inactivity
     saveTimeoutRef.current = setTimeout(() => {
       console.log('Auto-save triggered after 3 seconds of inactivity');
-      saveJournalEntries(true);
+      try {
+        const dataToSave = JSON.stringify(journalEntries);
+        console.log('Auto-saving journal entries - Number of dates:', Object.keys(journalEntries).length);
+        localStorage.setItem('tradingJournalEntries', dataToSave);
+        console.log('Journal auto-saved successfully to localStorage');
+
+        // Verify
+        const verified = localStorage.getItem('tradingJournalEntries');
+        const parsedVerify = JSON.parse(verified);
+        console.log('Verified: localStorage now has', Object.keys(parsedVerify).length, 'dates');
+
+        setJournalSaveStatus('saved');
+        setTimeout(() => setJournalSaveStatus(''), 2000);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        setJournalSaveStatus('');
+      }
     }, 3000);
 
     // Cleanup function
