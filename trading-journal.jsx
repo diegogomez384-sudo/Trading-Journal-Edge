@@ -351,6 +351,7 @@ function TradingJournal() {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   });
   const [journalDragOver, setJournalDragOver] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null); // { dataUrl, name }
 
   function handleCsvFile(file) {
     if (!file) return;
@@ -1300,7 +1301,8 @@ function TradingJournal() {
                           <img
                             src={img.dataUrl}
                             alt={img.name}
-                            style={{ width: "100%", height: 150, objectFit: "cover" }}
+                            style={{ width: "100%", height: 150, objectFit: "cover", cursor: "pointer" }}
+                            onClick={() => setPreviewImage(img)}
                           />
                           <button
                             onClick={() => {
@@ -2084,6 +2086,88 @@ function TradingJournal() {
             <div style={{ marginTop: 20 }}>
               <button className="ghost" onClick={() => setSelectedCalendarDate(null)} style={{ width: "100%" }}>Close</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMAGE PREVIEW MODAL */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.95)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+            padding: 40
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "relative",
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}
+          >
+            <button
+              onClick={() => setPreviewImage(null)}
+              style={{
+                position: "absolute",
+                top: -40,
+                right: 0,
+                background: "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: "#fff",
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                cursor: "pointer",
+                fontSize: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+              }}
+              title="Close preview"
+            >
+              ×
+            </button>
+            <img
+              src={previewImage.dataUrl}
+              alt={previewImage.name}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: 8,
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)"
+              }}
+            />
+            <p style={{
+              marginTop: 16,
+              color: "#999",
+              fontSize: 12,
+              fontFamily: "'DM Mono', monospace"
+            }}>
+              {previewImage.name}
+            </p>
           </div>
         </div>
       )}
