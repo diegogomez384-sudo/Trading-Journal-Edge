@@ -299,9 +299,16 @@ function TradingJournal() {
   useEffect(() => {
     try {
       const dataToSave = JSON.stringify(journalEntries);
+      console.log('Saving journal entries:', journalEntries);
       console.log('Saving journal entries, size:', dataToSave.length, 'bytes');
+      console.log('Number of dates in journal:', Object.keys(journalEntries).length);
       localStorage.setItem('tradingJournalEntries', dataToSave);
       console.log('Journal entries saved successfully');
+
+      // Verify what was actually saved
+      const verified = localStorage.getItem('tradingJournalEntries');
+      const parsedVerify = JSON.parse(verified);
+      console.log('Verified saved data has', Object.keys(parsedVerify).length, 'dates');
     } catch (error) {
       console.error('Failed to save journal entries to localStorage:', error);
       if (error.name === 'QuotaExceededError') {
