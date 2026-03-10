@@ -350,6 +350,7 @@ function TradingJournal() {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   });
+  const [journalDragOver, setJournalDragOver] = useState(false);
 
   function handleCsvFile(file) {
     if (!file) return;
@@ -1194,7 +1195,47 @@ function TradingJournal() {
                 </div>
 
                 {/* Screenshots Section */}
-                <div>
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setJournalDragOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setJournalDragOver(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setJournalDragOver(false);
+                    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                    files.forEach(file => {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const newImage = {
+                          id: Date.now() + Math.random(),
+                          dataUrl: event.target.result,
+                          name: file.name
+                        };
+                        setJournalEntries(prev => ({
+                          ...prev,
+                          [selectedJournalDate]: {
+                            text: prev[selectedJournalDate]?.text || '',
+                            images: [...(prev[selectedJournalDate]?.images || []), newImage]
+                          }
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }}
+                  style={{
+                    position: "relative",
+                    border: journalDragOver ? "2px dashed #7fffb2" : "2px dashed transparent",
+                    borderRadius: 8,
+                    padding: 16,
+                    transition: "all 0.2s",
+                    background: journalDragOver ? "rgba(127, 255, 178, 0.05)" : "transparent"
+                  }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                     <p className="lbl" style={{ margin: 0 }}>Screenshots & Charts</p>
                     <input
@@ -1234,6 +1275,22 @@ function TradingJournal() {
                       📷 Upload Images
                     </button>
                   </div>
+
+                  {/* Drag and Drop Indicator */}
+                  {journalDragOver && (
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      pointerEvents: "none",
+                      textAlign: "center",
+                      zIndex: 10
+                    }}>
+                      <p style={{ fontSize: 24, marginBottom: 8 }}>📷</p>
+                      <p style={{ fontSize: 14, color: "#7fffb2", fontWeight: 600 }}>Drop screenshots here</p>
+                    </div>
+                  )}
 
                   {/* Display uploaded images */}
                   {journalEntries[selectedJournalDate]?.images?.length > 0 && (
