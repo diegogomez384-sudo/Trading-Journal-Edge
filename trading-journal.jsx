@@ -303,15 +303,15 @@ function TradingJournal() {
   const saveJournalEntries = (isAutoSave = false) => {
     try {
       const dataToSave = JSON.stringify(journalEntries);
-      console.log(isAutoSave ? 'Auto-saving journal entries' : 'Manually saving journal entries');
-      console.log('Number of dates in journal:', Object.keys(journalEntries).length);
+      console.log('Manual save - journalEntries:', journalEntries);
+      console.log('Manual save - Number of dates:', Object.keys(journalEntries).length);
       localStorage.setItem('tradingJournalEntries', dataToSave);
-      console.log('Journal entries saved successfully to localStorage');
+      console.log('Manual save - Data written to localStorage');
 
       // Verify
       const verified = localStorage.getItem('tradingJournalEntries');
       const parsedVerify = JSON.parse(verified);
-      console.log('Verified: localStorage now has', Object.keys(parsedVerify).length, 'dates');
+      console.log('Manual save - Verified in localStorage:', Object.keys(parsedVerify).length, 'dates');
 
       if (!isAutoSave) {
         alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
@@ -413,15 +413,17 @@ function TradingJournal() {
   const [journalEntries, setJournalEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalEntries');
-      console.log('Loading journal entries from localStorage:', saved ? 'found data' : 'no data');
+      console.log('INITIAL LOAD - Raw localStorage data:', saved);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('Loaded journal entries:', Object.keys(parsed).length, 'dates');
+        console.log('INITIAL LOAD - Parsed journal entries:', parsed);
+        console.log('INITIAL LOAD - Number of dates:', Object.keys(parsed).length);
         return parsed;
       }
+      console.log('INITIAL LOAD - No data found, returning empty object');
       return {};
     } catch (error) {
-      console.error('Failed to load journal entries:', error);
+      console.error('INITIAL LOAD - Failed to load journal entries:', error);
       return {};
     }
   });
