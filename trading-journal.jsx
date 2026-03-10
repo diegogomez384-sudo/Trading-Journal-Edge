@@ -1187,14 +1187,19 @@ function TradingJournal() {
                   <textarea
                     value={journalEntries[selectedJournalDate]?.text || ''}
                     onChange={(e) => {
-                      setJournalEntries(prev => ({
-                        ...prev,
-                        [selectedJournalDate]: {
-                          ...prev[selectedJournalDate],
-                          text: e.target.value,
-                          images: prev[selectedJournalDate]?.images || []
-                        }
-                      }));
+                      console.log('Text changed, setting journal entry for date:', selectedJournalDate);
+                      setJournalEntries(prev => {
+                        const updated = {
+                          ...prev,
+                          [selectedJournalDate]: {
+                            ...prev[selectedJournalDate],
+                            text: e.target.value,
+                            images: prev[selectedJournalDate]?.images || []
+                          }
+                        };
+                        console.log('Updated journal entries:', updated);
+                        return updated;
+                      });
                     }}
                     placeholder="Enter your pre-market analysis, trade plans, market observations..."
                     style={{
@@ -1230,13 +1235,18 @@ function TradingJournal() {
                           dataUrl: event.target.result,
                           name: file.name
                         };
-                        setJournalEntries(prev => ({
-                          ...prev,
-                          [selectedJournalDate]: {
-                            text: prev[selectedJournalDate]?.text || '',
-                            images: [...(prev[selectedJournalDate]?.images || []), newImage]
-                          }
-                        }));
+                        console.log('Image uploaded via drag/drop for date:', selectedJournalDate);
+                        setJournalEntries(prev => {
+                          const updated = {
+                            ...prev,
+                            [selectedJournalDate]: {
+                              text: prev[selectedJournalDate]?.text || '',
+                              images: [...(prev[selectedJournalDate]?.images || []), newImage]
+                            }
+                          };
+                          console.log('Updated journal entries with image:', updated);
+                          return updated;
+                        });
                       };
                       reader.readAsDataURL(file);
                     });
@@ -1268,13 +1278,18 @@ function TradingJournal() {
                               dataUrl: event.target.result,
                               name: file.name
                             };
-                            setJournalEntries(prev => ({
-                              ...prev,
-                              [selectedJournalDate]: {
-                                text: prev[selectedJournalDate]?.text || '',
-                                images: [...(prev[selectedJournalDate]?.images || []), newImage]
-                              }
-                            }));
+                            console.log('Image uploaded via button for date:', selectedJournalDate);
+                            setJournalEntries(prev => {
+                              const updated = {
+                                ...prev,
+                                [selectedJournalDate]: {
+                                  text: prev[selectedJournalDate]?.text || '',
+                                  images: [...(prev[selectedJournalDate]?.images || []), newImage]
+                                }
+                              };
+                              console.log('Updated journal entries with image:', updated);
+                              return updated;
+                            });
                           };
                           reader.readAsDataURL(file);
                         });
