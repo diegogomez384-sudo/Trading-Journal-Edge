@@ -295,8 +295,15 @@ function TradingJournal() {
     }
   }, [customStrategies]);
 
-  // Save journal entries to localStorage
+  // Save journal entries to localStorage (skip initial mount to prevent overwriting)
+  const isInitialMountJournal = useRef(true);
   useEffect(() => {
+    if (isInitialMountJournal.current) {
+      isInitialMountJournal.current = false;
+      console.log('Skipping initial save of journal entries');
+      return;
+    }
+
     try {
       const dataToSave = JSON.stringify(journalEntries);
       console.log('Saving journal entries:', journalEntries);
