@@ -295,11 +295,15 @@ function TradingJournal() {
     }
   }, [customStrategies]);
 
+  // Auto-save state for journal
+  const [journalSaveStatus, setJournalSaveStatus] = useState(''); // '', 'saving', 'saved'
+  const saveTimeoutRef = useRef(null);
+
   // Manual save function for journal entries
-  const saveJournalEntries = () => {
+  const saveJournalEntries = (isAutoSave = false) => {
     try {
       const dataToSave = JSON.stringify(journalEntries);
-      console.log('Manually saving journal entries:', journalEntries);
+      console.log(isAutoSave ? 'Auto-saving journal entries' : 'Manually saving journal entries');
       console.log('Number of dates in journal:', Object.keys(journalEntries).length);
       localStorage.setItem('tradingJournalEntries', dataToSave);
       console.log('Journal entries saved successfully to localStorage');
@@ -308,12 +312,52 @@ function TradingJournal() {
       const verified = localStorage.getItem('tradingJournalEntries');
       const parsedVerify = JSON.parse(verified);
       console.log('Verified: localStorage now has', Object.keys(parsedVerify).length, 'dates');
-      alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
+
+      if (!isAutoSave) {
+        alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
+      } else {
+        setJournalSaveStatus('saved');
+        setTimeout(() => setJournalSaveStatus(''), 2000);
+      }
     } catch (error) {
       console.error('Failed to save journal entries:', error);
-      alert('Failed to save journal: ' + error.message);
+      if (!isAutoSave) {
+        alert('Failed to save journal: ' + error.message);
+      }
     }
   };
+
+  // Auto-save journal entries with debounce (3 seconds after last change)
+  const isInitialMountJournal = useRef(true);
+  useEffect(() => {
+    // Skip the initial mount to avoid saving empty state
+    if (isInitialMountJournal.current) {
+      isInitialMountJournal.current = false;
+      console.log('Skipping initial auto-save of journal entries');
+      return;
+    }
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set saving status
+    setJournalSaveStatus('saving');
+
+    // Set new timeout to save after 3 seconds of inactivity
+    saveTimeoutRef.current = setTimeout(() => {
+      console.log('Auto-save triggered after 3 seconds of inactivity');
+      saveJournalEntries(true);
+    }, 3000);
+
+    // Cleanup function
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [journalEntries]);
 
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
@@ -1162,7 +1206,7 @@ function TradingJournal() {
                     style={{ width: 200 }}
                   />
                   <button
-                    onClick={saveJournalEntries}
+                    onClick={() => saveJournalEntries(false)}
                     style={{
                       background: "#7fffb2",
                       color: "#111",
@@ -1176,6 +1220,12 @@ function TradingJournal() {
                   >
                     💾 Save Journal
                   </button>
+                  {journalSaveStatus === 'saving' && (
+                    <span style={{ fontSize: 11, color: "#7fffb2" }}>Saving...</span>
+                  )}
+                  {journalSaveStatus === 'saved' && (
+                    <span style={{ fontSize: 11, color: "#7fffb2" }}>✓ Saved</span>
+                  )}
                 </div>
               </div>
 
