@@ -295,86 +295,17 @@ function TradingJournal() {
     }
   }, [customStrategies]);
 
-  // Auto-save state for journal
-  const [journalSaveStatus, setJournalSaveStatus] = useState(''); // '', 'saving', 'saved'
-  const saveTimeoutRef = useRef(null);
-
   // Manual save function for journal entries
-  const saveJournalEntries = (isAutoSave = false) => {
+  const saveJournalEntries = () => {
     try {
       const dataToSave = JSON.stringify(journalEntries);
-      console.log('Manual save - journalEntries:', journalEntries);
-      console.log('Manual save - Number of dates:', Object.keys(journalEntries).length);
       localStorage.setItem('tradingJournalEntries', dataToSave);
-      console.log('Manual save - Data written to localStorage');
-
-      // Verify
-      const verified = localStorage.getItem('tradingJournalEntries');
-      const parsedVerify = JSON.parse(verified);
-      console.log('Manual save - Verified in localStorage:', Object.keys(parsedVerify).length, 'dates');
-
-      if (!isAutoSave) {
-        alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
-      } else {
-        setJournalSaveStatus('saved');
-        setTimeout(() => setJournalSaveStatus(''), 2000);
-      }
+      alert(`Journal saved! ${Object.keys(journalEntries).length} date(s) saved.`);
     } catch (error) {
       console.error('Failed to save journal entries:', error);
-      if (!isAutoSave) {
-        alert('Failed to save journal: ' + error.message);
-      }
+      alert('Failed to save journal: ' + error.message);
     }
   };
-
-  // Auto-save journal entries with debounce (3 seconds after last change)
-  const isInitialMountJournal = useRef(true);
-  useEffect(() => {
-    // Skip the initial mount to avoid saving empty state
-    if (isInitialMountJournal.current) {
-      isInitialMountJournal.current = false;
-      console.log('Skipping initial auto-save of journal entries');
-      return;
-    }
-
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Set saving status
-    setJournalSaveStatus('saving');
-    console.log('Journal changed, scheduling auto-save in 3 seconds...');
-
-    // Set new timeout to save after 3 seconds of inactivity
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('Auto-save triggered after 3 seconds of inactivity');
-      try {
-        const dataToSave = JSON.stringify(journalEntries);
-        console.log('Auto-saving journal entries - Number of dates:', Object.keys(journalEntries).length);
-        localStorage.setItem('tradingJournalEntries', dataToSave);
-        console.log('Journal auto-saved successfully to localStorage');
-
-        // Verify
-        const verified = localStorage.getItem('tradingJournalEntries');
-        const parsedVerify = JSON.parse(verified);
-        console.log('Verified: localStorage now has', Object.keys(parsedVerify).length, 'dates');
-
-        setJournalSaveStatus('saved');
-        setTimeout(() => setJournalSaveStatus(''), 2000);
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-        setJournalSaveStatus('');
-      }
-    }, 3000);
-
-    // Cleanup function
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [journalEntries]);
 
   // --- CSV Import state ---
   const [showImport, setShowImport] = useState(false);
@@ -413,17 +344,13 @@ function TradingJournal() {
   const [journalEntries, setJournalEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalEntries');
-      console.log('INITIAL LOAD - Raw localStorage data:', saved);
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('INITIAL LOAD - Parsed journal entries:', parsed);
-        console.log('INITIAL LOAD - Number of dates:', Object.keys(parsed).length);
         return parsed;
       }
-      console.log('INITIAL LOAD - No data found, returning empty object');
       return {};
     } catch (error) {
-      console.error('INITIAL LOAD - Failed to load journal entries:', error);
+      console.error('Failed to load journal entries:', error);
       return {};
     }
   });
@@ -1224,27 +1151,9 @@ function TradingJournal() {
                     onChange={(e) => setSelectedJournalDate(e.target.value)}
                     style={{ width: 200 }}
                   />
-                  <button
-                    onClick={() => saveJournalEntries(false)}
-                    style={{
-                      background: "#7fffb2",
-                      color: "#111",
-                      padding: "8px 20px",
-                      borderRadius: 6,
-                      border: "none",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      fontSize: 13
-                    }}
-                  >
-                    💾 Save Journal
+                  <button className="gbtn" onClick={saveJournalEntries}>
+                    Save Journal
                   </button>
-                  {journalSaveStatus === 'saving' && (
-                    <span style={{ fontSize: 11, color: "#7fffb2" }}>Saving...</span>
-                  )}
-                  {journalSaveStatus === 'saved' && (
-                    <span style={{ fontSize: 11, color: "#7fffb2" }}>✓ Saved</span>
-                  )}
                 </div>
               </div>
 
