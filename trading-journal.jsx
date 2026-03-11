@@ -472,7 +472,7 @@ function TradingJournal() {
 
   async function analyzeOne(trade) {
     if (!apiKey) {
-      setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Please enter your Anthropic API key in the AI Coach tab." } }));
+      setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Please enter your Anthropic API key in the Lyra tab." } }));
       return;
     }
     setTradeAi(p => ({ ...p, [trade.id]: { loading: true, text: "" } }));
@@ -751,7 +751,7 @@ function TradingJournal() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"], ["ai-coach", "AI Coach"]].map(([v, l]) => (
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"], ["ai-coach", "Lyra"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
           </div>
@@ -1166,7 +1166,7 @@ function TradingJournal() {
                         {tradeAi[t.id]?.loading && <p style={{ fontSize: 11, color: "#7fffb2" }} className="pulse">Analyzing trade...</p>}
                         {tradeAi[t.id]?.text && (
                           <div style={{ marginTop: 12, padding: 16, background: "#0c0c18", borderRadius: 6, border: "1px solid #1e1e30" }}>
-                            <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em", marginBottom: 10 }}>AI COACHING</p>
+                            <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em", marginBottom: 10 }}>LYRA COACHING</p>
                             <p className="ai-text">{tradeAi[t.id].text}</p>
                           </div>
                         )}
@@ -1532,8 +1532,8 @@ function TradingJournal() {
           {/* AI COACH */}
           {view === "ai-coach" && (
             <div>
-              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
-              <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Lyra</p>
+              <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>Your AI Trading Coach \u2014 Powered by Claude. Deep analysis of your futures edge, psychology & risk management.</p>
 
               {/* API Key Input */}
               <div className="card" style={{ marginBottom: 20 }}>
@@ -1581,7 +1581,7 @@ function TradingJournal() {
                   <div style={{ padding: 20, background: "#09090f", borderRadius: 6, border: "1px solid #7fffb218" }}>
                     <div style={{ display: "flex", gap: 7, alignItems: "center", marginBottom: 14 }}>
                       <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#7fffb2", boxShadow: "0 0 6px #7fffb2" }} />
-                      <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em" }}>AI ANALYSIS COMPLETE</p>
+                      <p style={{ fontSize: 9, color: "#7fffb2", letterSpacing: ".12em" }}>LYRA ANALYSIS COMPLETE</p>
                     </div>
                     <p className="ai-text">{aiReport}</p>
                   </div>
