@@ -266,6 +266,14 @@ function TradingJournal() {
   const [expandedTrade, setExpandedTrade] = useState(null);
   const [tradeAi, setTradeAi] = useState({});
   const [filterSession, setFilterSession] = useState("All");
+  const [apiKey, setApiKey] = useState(() => {
+    try {
+      const saved = localStorage.getItem('anthropicApiKey');
+      return saved || "";
+    } catch (error) {
+      return "";
+    }
+  });
   const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
 
   // Save trades to localStorage whenever they change
@@ -294,6 +302,15 @@ function TradingJournal() {
       console.error('Failed to save custom strategies to localStorage:', error);
     }
   }, [customStrategies]);
+
+  // Save API key to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('anthropicApiKey', apiKey);
+    } catch (error) {
+      console.error('Failed to save API key to localStorage:', error);
+    }
+  }, [apiKey]);
 
   // Manual save function for journal entries
   const saveJournalEntries = () => {
@@ -435,23 +452,39 @@ function TradingJournal() {
   }
 
   async function runAnalysis() {
+    if (!apiKey) {
+      setAiError("Please enter your Anthropic API key above.");
+      return;
+    }
     setAiLoading(true); setAiReport(""); setAiError("");
     const summary = trades.map(t => `${t.date}|${t.ticker}|${t.direction}|E:${t.entry} X:${t.exit} ${t.size}ct|$${t.pnl}|${t.strategy}|${t.emotion}|${t.session}|${t.notes}`).join("\n");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: `You are an elite futures trading coach. Analyze this trader's journal:\n\n${summary}\n\nProvide:\n1. **Edge Assessment** \u2014 where is the real edge and why?\n2. **Psychological Patterns** \u2014 what emotional tendencies are costing them money? Be specific and direct.\n3. **Session Timing** \u2014 which sessions/times show best vs worst performance?\n4. **Risk Management** \u2014 position sizing and stop discipline assessment\n5. **Top 3 Action Items** \u2014 specific changes to implement next week\n\nBe sharp and direct. Use futures terminology. Under 450 words.` }] }) });
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: `You are an elite futures trading coach. Analyze this trader's journal:\n\n${summary}\n\nProvide:\n1. **Edge Assessment** \u2014 where is the real edge and why?\n2. **Psychological Patterns** \u2014 what emotional tendencies are costing them money? Be specific and direct.\n3. **Session Timing** \u2014 which sessions/times show best vs worst performance?\n4. **Risk Management** \u2014 position sizing and stop discipline assessment\n5. **Top 3 Action Items** \u2014 specific changes to implement next week\n\nBe sharp and direct. Use futures terminology. Under 450 words.` }] }) });
       const data = await res.json();
-      setAiReport(data.content?.map(b => b.text || "").join("") || "No response.");
-    } catch { setAiError("Failed to reach AI. Please try again."); }
+      if (data.error) {
+        setAiError(`API Error: ${data.error.message || "Unknown error"}`);
+      } else {
+        setAiReport(data.content?.map(b => b.text || "").join("") || "No response.");
+      }
+    } catch (err) { setAiError("Failed to reach AI. Check your API key and try again."); }
     setAiLoading(false);
   }
 
   async function analyzeOne(trade) {
+    if (!apiKey) {
+      setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Please enter your Anthropic API key in the AI Coach tab." } }));
+      return;
+    }
     setTradeAi(p => ({ ...p, [trade.id]: { loading: true, text: "" } }));
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: `Analyze this futures trade as a coach:\n\n${trade.ticker} | ${trade.direction} | Entry: ${trade.entry} Exit: ${trade.exit} | ${trade.size} contracts | P&L: $${trade.pnl}\nStrategy: ${trade.strategy} | Session: ${trade.session} | Emotion: ${trade.emotion}\nNotes: ${trade.notes}\n\nGive: (1) Execution quality \u2014 was entry/exit well-timed for this setup? (2) How did their emotional state (${trade.emotion}) affect this trade? (3) One specific improvement. Use futures terminology. 3 concise paragraphs.` }] }) });
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: `Analyze this futures trade as a coach:\n\n${trade.ticker} | ${trade.direction} | Entry: ${trade.entry} Exit: ${trade.exit} | ${trade.size} contracts | P&L: $${trade.pnl}\nStrategy: ${trade.strategy} | Session: ${trade.session} | Emotion: ${trade.emotion}\nNotes: ${trade.notes}\n\nGive: (1) Execution quality \u2014 was entry/exit well-timed for this setup? (2) How did their emotional state (${trade.emotion}) affect this trade? (3) One specific improvement. Use futures terminology. 3 concise paragraphs.` }] }) });
       const data = await res.json();
-      setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: data.content?.map(b => b.text || "").join("") || "No response." } }));
-    } catch { setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Analysis failed." } })); }
+      if (data.error) {
+        setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: `API Error: ${data.error.message || "Unknown error"}` } }));
+      } else {
+        setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: data.content?.map(b => b.text || "").join("") || "No response." } }));
+      }
+    } catch { setTradeAi(p => ({ ...p, [trade.id]: { loading: false, text: "Analysis failed. Check your API key." } })); }
   }
 
   function deleteTrade(id) {
@@ -1501,6 +1534,38 @@ function TradingJournal() {
             <div>
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>AI Trading Coach</p>
               <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>Powered by Claude \u2014 deep analysis of your futures edge, psychology & risk management.</p>
+
+              {/* API Key Input */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 14, color: "#fff", marginBottom: 8 }}>API Configuration</p>
+                <p style={{ fontSize: 11, color: "#aaa", marginBottom: 12 }}>
+                  Enter your Anthropic API key to enable AI coaching. Get your key at{" "}
+                  <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#7fffb2", textDecoration: "none" }}>
+                    console.anthropic.com
+                  </a>
+                </p>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="sk-ant-api03-..."
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      background: "#09090f",
+                      border: "1px solid #1e1e30",
+                      borderRadius: 6,
+                      color: "#fff",
+                      fontSize: 12,
+                      fontFamily: "'DM Mono', monospace"
+                    }}
+                  />
+                  {apiKey && (
+                    <span style={{ fontSize: 11, color: "#7fffb2" }}>✓ Key saved</span>
+                  )}
+                </div>
+              </div>
 
               <div className="card" style={{ marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: aiReport || aiLoading || aiError ? 20 : 0 }}>
