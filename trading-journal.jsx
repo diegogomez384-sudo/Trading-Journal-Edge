@@ -692,7 +692,19 @@ function TradingJournal() {
         {/* HEADER */}
         <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ fontFamily: "'Courier New', Courier, monospace", fontWeight: 700, fontSize: 26, letterSpacing: "1px" }}>
+            <div
+              onClick={() => setView("dashboard")}
+              style={{
+                fontFamily: "'Courier New', Courier, monospace",
+                fontWeight: 700,
+                fontSize: 26,
+                letterSpacing: "1px",
+                cursor: "pointer",
+                transition: "opacity 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.7"}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+            >
               <span style={{ color: "#e45e54" }}>u</span>
               <span style={{ color: "#f28b57" }}>l</span>
               <span style={{ color: "#fabf53" }}>t</span>
