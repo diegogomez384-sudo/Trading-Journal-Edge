@@ -101,57 +101,39 @@ function parseTradovateCsv(text) {
   const rows = parseCSV(text);
   if (rows.length === 0) return { trades: [], error: "No data rows found in CSV." };
 
-  // Detect if this is Fills export (has 'fill id' or 'comission' columns) or Orders export (has 'Status' column)
-  const isFillsExport = rows[0] && (rows[0]["fill id"] !== undefined || rows[0]["comission"] !== undefined);
-
-  let filled = rows;
-  if (!isFillsExport) {
-    // Orders export - only keep filled orders
-    filled = rows.filter(r => (r["Status"] || "").toLowerCase() === "filled");
-    if (filled.length === 0) return { trades: [], error: "No filled orders found. Make sure you exported from the Orders or Fills tab." };
-  }
+  // Only keep filled orders
+  const filled = rows.filter(r => (r["Status"] || "").toLowerCase() === "filled");
+  if (filled.length === 0) return { trades: [], error: "No filled orders found. Make sure you exported from the Orders tab." };
 
   // Group by Product (instrument) and pair buys/sells into round trips
   const byProduct = {};
   for (const row of filled) {
-    const product = (row["Product"] || row["product"] || "").trim();
-    if (!product) continue;
+    const product = (row["Product"] || "").trim();
     if (!byProduct[product]) byProduct[product] = [];
     byProduct[product].push(row);
-  }
-
-  if (Object.keys(byProduct).length === 0) {
-    return { trades: [], error: "No valid trades found in CSV. Make sure the file has product/instrument data." };
   }
 
   const trades = [];
 
   for (const [product, orders] of Object.entries(byProduct)) {
-    // Sort by fill time - handle both Orders and Fills export formats
-    orders.sort((a, b) => {
-      const timeA = a["Fill Time"] || a["Timestamp"] || a["timestamp"] || a["Date"] || a["date"] || "";
-      const timeB = b["Fill Time"] || b["Timestamp"] || b["timestamp"] || b["Date"] || b["date"] || "";
-      return new Date(timeA) - new Date(timeB);
-    });
+    // Sort by fill time
+    orders.sort((a, b) => new Date(a["Fill Time"] || a["Timestamp"] || a["Date"]) - new Date(b["Fill Time"] || b["Timestamp"] || b["Date"]));
 
     let position = 0;
     let openOrders = [];
 
     for (const order of orders) {
-      // Handle both Orders export (B/S) and Fills export (b/s) formats
-      const bs = (order["B/S"] || order["b/s"] || "").trim();
-      const qty = parseInt(order["Filled Qty"] || order["filledQty"] || order["Quantity"] || order["quantity"] || "0");
-      const price = parseFloat(order["Avg Fill Price"] || order["avgPrice"] || order["price"] || "0");
+      const bs = (order["B/S"] || "").trim();
+      const qty = parseInt(order["Filled Qty"] || order["filledQty"] || order["Quantity"] || "0");
+      const price = parseFloat(order["Avg Fill Price"] || order["avgPrice"] || "0");
       if (!qty || !price || !bs) continue;
 
       const signed = bs.toLowerCase().startsWith("b") ? qty : -qty;
       const prevPosition = position;
       position += signed;
 
-      const orderTime = order["Fill Time"] || order["Timestamp"] || order["timestamp"] || order["Date"] || order["date"] || "";
-
       if (prevPosition === 0) {
-        openOrders = [{ bs, qty, price, time: orderTime }];
+        openOrders = [{ bs, qty, price, time: order["Fill Time"] || order["Timestamp"] || order["Date"] }];
       } else if (position === 0 || (prevPosition !== 0 && Math.sign(position) !== Math.sign(prevPosition))) {
         // Round trip complete
         const entryQty = Math.abs(prevPosition);
@@ -183,7 +165,7 @@ function parseTradovateCsv(text) {
           entry: parseFloat(entryPrice.toFixed(6)),
           exit: parseFloat(exitPrice.toFixed(6)),
           entryTime: extractTime(entryTime),
-          exitTime: extractTime(orderTime),
+          exitTime: extractTime(order["Fill Time"] || order["Timestamp"] || order["Date"]),
           size: entryQty,
           strategy: "Other",
           emotion: "Calm",
@@ -195,12 +177,12 @@ function parseTradovateCsv(text) {
         trades.push(trade);
 
         if (position !== 0) {
-          openOrders = [{ bs, qty: Math.abs(position), price, time: orderTime }];
+          openOrders = [{ bs, qty: Math.abs(position), price, time: order["Fill Time"] || order["Timestamp"] || order["Date"] }];
         } else {
           openOrders = [];
         }
       } else {
-        openOrders.push({ bs, qty, price, time: orderTime });
+        openOrders.push({ bs, qty, price, time: order["Fill Time"] || order["Timestamp"] || order["Date"] });
       }
     }
   }
