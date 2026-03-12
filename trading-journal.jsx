@@ -751,9 +751,52 @@ function TradingJournal() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"], ["ai-coach", "Lyra"]].map(([v, l]) => (
+            {/* Regular Tabs */}
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
+
+            {/* Lyra Custom Tab */}
+            <style>
+              {`
+                .lyra-tab {
+                  display: flex !important;
+                  align-items: center !important;
+                  gap: 6px !important;
+                  padding: 8px 14px !important;
+                  border: 1px solid #222235;
+                  background: transparent;
+                  color: #ccc;
+                  transition: all 0.2s;
+                  border-radius: 4px;
+                  cursor: pointer;
+                }
+                .lyra-tab.on {
+                  border: 1px solid #7fffb2 !important;
+                  background: rgba(127,255,178,.07) !important;
+                  color: #7fffb2 !important;
+                }
+                .lyra-tab .lyra-text {
+                  font-family: 'Courier New', Courier, monospace !important;
+                  font-weight: 800 !important;
+                  font-size: 14px !important;
+                  text-transform: lowercase !important;
+                  letter-spacing: 1px !important;
+                }
+              `}
+            </style>
+            <button
+              className={`lyra-tab ${view === "ai-coach" ? "on" : ""}`}
+              onClick={() => setView("ai-coach")}
+            >
+              <span className="lyra-text">
+                <span style={{ color: "#e45e54" }}>l</span>
+                <span style={{ color: "#f28b57" }}>y</span>
+                <span style={{ color: "#fabf53" }}>r</span>
+                <span style={{ color: "#8bc268" }}>a</span>
+              </span>
+              <span style={{ fontSize: 13, display: "inline-block" }}>✨</span>
+            </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button className="ghost" onClick={() => { setShowImport(true); setImportResult(null); setImportPreview(null); }}>Import CSV</button>
