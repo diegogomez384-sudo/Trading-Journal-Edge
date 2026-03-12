@@ -156,21 +156,6 @@ function parseTradovateCsv(text) {
           return `${hours}:${minutes}:${seconds}`;
         };
 
-        // Try to get actual P&L from CSV first
-        let realizedPnl = null;
-
-        // Check for P&L in the exit order (most recent order in this round trip)
-        const pnlFields = ["Realized P&L", "Realized P/L", "P&L", "P/L", "Net P&L", "realizedPnl"];
-        for (const field of pnlFields) {
-          if (order[field] !== undefined && order[field] !== "") {
-            const parsed = parseFloat(order[field]);
-            if (!isNaN(parsed)) {
-              realizedPnl = parsed;
-              break;
-            }
-          }
-        }
-
         const trade = {
           id: `csv-${Date.now()}-${trades.length}`,
           date: formatDateToYMD(entryTime),
@@ -188,9 +173,7 @@ function parseTradovateCsv(text) {
           notes: "[Imported from Tradovate CSV]",
           source: "csv",
         };
-
-        // Use actual P&L from CSV if available, otherwise calculate it
-        trade.pnl = realizedPnl !== null ? realizedPnl : calcPnl(trade);
+        trade.pnl = calcPnl(trade);
         trades.push(trade);
 
         if (position !== 0) {
