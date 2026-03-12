@@ -120,6 +120,10 @@ function parseTradovateCsv(text) {
     byProduct[product].push(row);
   }
 
+  if (Object.keys(byProduct).length === 0) {
+    return { trades: [], error: "No valid trades found in CSV. Make sure the file has product/instrument data." };
+  }
+
   const trades = [];
 
   for (const [product, orders] of Object.entries(byProduct)) {
