@@ -1603,7 +1603,7 @@ function TradingJournal() {
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 12 }}>{s.name}</span>
                         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                          <span style={{ fontSize: 10, color: "#aaa" }}>{s.wr}% WR \u00B7 {s.count}t</span>
+                          <span style={{ fontSize: 10, color: "#aaa" }}>{s.wr}% WR · {s.count}t</span>
                           <span className={s.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</span>
                         </div>
                       </div>
