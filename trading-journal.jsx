@@ -1913,7 +1913,7 @@ function TradingJournal() {
               <div style={{ margin: "16px 0", padding: "12px 16px", background: "#09090f", borderRadius: 6, border: `1px solid ${previewPnl >= 0 ? "#7fffb222" : "#ff446622"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <p style={{ fontSize: 9, color: "#aaa", letterSpacing: ".1em", marginBottom: 3 }}>ESTIMATED P&L</p>
-                  <p style={{ fontSize: 10, color: "#9595b0" }}>{Math.abs((+form.exit) - (+form.entry)).toFixed(2)} pts \u00D7 {form.size}ct \u00D7 ${POINT_VALUES[form.market]}</p>
+                  <p style={{ fontSize: 10, color: "#9595b0" }}>{Math.abs((+form.exit) - (+form.entry)).toFixed(2)} pts × {form.size}ct × ${POINT_VALUES[form.market]}</p>
                 </div>
                 <p style={{ fontFamily: "Syne,sans-serif", fontSize: 22, fontWeight: 700 }} className={previewPnl >= 0 ? "pos" : "neg"}>{previewPnl >= 0 ? "+" : ""}${previewPnl.toLocaleString()}</p>
               </div>
