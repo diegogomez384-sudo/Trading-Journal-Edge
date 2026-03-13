@@ -869,15 +869,6 @@ function TradingJournal() {
                 animation: grain 8s steps(10) infinite;
               }
 
-              /* Radial ambient glow */
-              .nav-toolbar::after {
-                content: '';
-                position: absolute;
-                inset: -100px;
-                background: radial-gradient(circle at center, rgba(232, 175, 72, 0.08) 0%, transparent 70%);
-                pointer-events: none;
-                z-index: -1;
-              }
 
               /* Golden ring indicator */
               @keyframes spin-gold {
