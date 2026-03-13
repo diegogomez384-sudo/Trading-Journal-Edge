@@ -256,9 +256,13 @@ function TradingJournal() {
   const [isDark, setIsDark] = useState(() => {
     try {
       const saved = localStorage.getItem('tradingJournalTheme');
-      return saved ? JSON.parse(saved) : true;
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+      // Default to system preference
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     } catch (error) {
-      return true;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
   });
   const [aiLoading, setAiLoading] = useState(false);
@@ -294,6 +298,21 @@ function TradingJournal() {
       console.error('Failed to save theme to localStorage:', error);
     }
   }, [isDark]);
+
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => {
+      // Only update if user hasn't manually set a preference
+      const saved = localStorage.getItem('tradingJournalTheme');
+      if (saved === null) {
+        setIsDark(e.matches);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   // Save custom strategies to localStorage
   useEffect(() => {
