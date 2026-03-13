@@ -743,9 +743,9 @@ function TradingJournal() {
         body { background: ${isDark ? "#06060d" : "#f9f9f2"}; margin: 0; }
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#1e1e30;border-radius:2px;}
-        .nb{background:none;border:none;cursor:pointer;padding:8px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .2s;color:#8a8aa8;text-transform:uppercase;}
-        .nb.on{color:#7fffb2;background:rgba(127,255,178,.07);}
-        .nb:hover{color:#d8d8ec;}
+        .nb{background:none;border:none;cursor:pointer;padding:10px 18px;border-radius:14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);color:#8a8aa8;text-transform:uppercase;position:relative;}
+        .nb.on{color:#fff;background:rgba(255,255,255,.18);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);}
+        .nb:hover{color:#d8d8ec;background:rgba(255,255,255,0.08);}
         .card{background:#0c0c16;border:1px solid #181828;border-radius:8px;padding:20px;}
         .gbtn{background:#7fffb2;color:#06060d;border:none;cursor:pointer;padding:10px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;transition:all .2s;text-transform:uppercase;}
         .gbtn:hover{background:#5de89a;transform:translateY(-1px);}
@@ -804,7 +804,18 @@ function TradingJournal() {
               <span style={{ color: "#fabf53" }}>k</span>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <div style={{
+            display: "flex",
+            gap: 4,
+            alignItems: "center",
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(30px) saturate(150%)",
+            WebkitBackdropFilter: "blur(30px) saturate(150%)",
+            padding: "6px",
+            borderRadius: "20px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)"
+          }}>
             {/* Regular Tabs */}
             {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"]].map(([v, l]) => (
               <button key={v} className={`nb ${view === v ? "on" : ""}`} onClick={() => setView(v)}>{l}</button>
@@ -817,23 +828,29 @@ function TradingJournal() {
                   display: flex !important;
                   align-items: center !important;
                   gap: 6px !important;
-                  padding: 8px 14px !important;
-                  border: 1px solid #222235;
-                  background: transparent;
+                  padding: 10px 18px !important;
+                  border: none;
+                  background: none;
                   color: #ccc;
-                  transition: all 0.2s;
-                  border-radius: 4px;
+                  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+                  border-radius: 14px;
                   cursor: pointer;
+                  position: relative;
+                }
+                .lyra-tab:hover {
+                  background: rgba(255,255,255,0.08);
                 }
                 .lyra-tab.on {
-                  border: 1px solid #7fffb2 !important;
-                  background: rgba(127,255,178,.07) !important;
-                  color: #7fffb2 !important;
+                  color: #fff !important;
+                  background: rgba(255,255,255,.18) !important;
+                  backdrop-filter: blur(20px) saturate(180%);
+                  -webkit-backdrop-filter: blur(20px) saturate(180%);
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
                 }
                 .lyra-tab .lyra-text {
                   font-family: 'Courier New', Courier, monospace !important;
                   font-weight: 800 !important;
-                  font-size: 14px !important;
+                  font-size: 11px !important;
                   text-transform: lowercase !important;
                   letter-spacing: 1px !important;
                 }
