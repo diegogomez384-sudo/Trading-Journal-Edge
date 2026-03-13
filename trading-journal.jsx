@@ -281,24 +281,6 @@ function TradingJournal() {
   });
   const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
 
-  // Navigation button refs for golden ring indicator
-  const navButtonRefs = useRef({});
-  const [activeButtonBounds, setActiveButtonBounds] = useState(null);
-
-  // Update golden ring position when view changes
-  useEffect(() => {
-    const activeButton = navButtonRefs.current[view];
-    if (activeButton) {
-      const bounds = activeButton.getBoundingClientRect();
-      const parent = activeButton.parentElement.getBoundingClientRect();
-      setActiveButtonBounds({
-        left: bounds.left - parent.left,
-        top: bounds.top - parent.top,
-        width: bounds.width,
-        height: bounds.height
-      });
-    }
-  }, [view]);
 
   // Save trades to localStorage whenever they change
   useEffect(() => {
@@ -762,9 +744,10 @@ function TradingJournal() {
         body { background: ${isDark ? "#06060d" : "#f9f9f2"}; margin: 0; }
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:rgba(255,255,255,0.03);border-radius:10px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:10px;border:2px solid transparent;background-clip:padding-box;}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18);background-clip:padding-box;}
-        .nb{background:none;border:none;cursor:pointer;padding:10px 18px;border-radius:14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);color:#8a8aa8;text-transform:uppercase;position:relative;}
-        .nb.on{color:#fff;background:rgba(255,255,255,.18);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);}
-        .nb:hover{color:#d8d8ec;background:rgba(255,255,255,0.08);}
+        .nb{background:rgba(255,255,255,0.04);border:none;cursor:pointer;padding:10px 18px;border-radius:12px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .4s cubic-bezier(0.2, 0.8, 0.2, 1);color:#8a8aa8;text-transform:uppercase;position:relative;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+        .nb.on{color:#fff;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 2px 12px rgba(0,0,0,0.2), 0 0 0 0.5px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(255,255,255,0.05);}
+        .nb:hover:not(.on){color:#d8d8ec;background:rgba(255,255,255,0.07);}
+        .nb:active{transform:scale(0.96);}
         .card{background:rgba(255,255,255,0.06);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);}
         .gbtn{background:rgba(127,255,178,0.9);color:#06060d;border:none;cursor:pointer;padding:12px 24px;border-radius:12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);text-transform:uppercase;box-shadow:0 4px 16px rgba(127,255,178,0.3), inset 0 1px 0 rgba(255,255,255,0.4);}
         .gbtn:hover{background:rgba(127,255,178,1);transform:translateY(-2px);box-shadow:0 8px 24px rgba(127,255,178,0.4), inset 0 1px 0 rgba(255,255,255,0.5);}
@@ -841,210 +824,83 @@ function TradingJournal() {
               <span style={{ color: "#fabf53" }}>k</span>
             </div>
           </div>
-          {/* Floating Navigation Toolbar with Golden Ring Indicator */}
+          {/* Liquid Glass Tab Bar */}
           <style>
             {`
-              /* Film grain noise overlay */
-              @keyframes grain {
-                0%, 100% { transform: translate(0, 0); }
-                10% { transform: translate(-5%, -10%); }
-                20% { transform: translate(-15%, 5%); }
-                30% { transform: translate(7%, -25%); }
-                40% { transform: translate(-5%, 25%); }
-                50% { transform: translate(-15%, 10%); }
-                60% { transform: translate(15%, 0%); }
-                70% { transform: translate(0%, 15%); }
-                80% { transform: translate(3%, 25%); }
-                90% { transform: translate(-10%, 10%); }
+              .glass-tabbar {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding: 5px 6px;
+                border-radius: 22px;
+                background: rgba(255,255,255,0.06);
+                backdrop-filter: blur(30px) saturate(150%);
+                -webkit-backdrop-filter: blur(30px) saturate(150%);
+                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
               }
-
-              .nav-toolbar::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-                opacity: 0.03;
-                pointer-events: none;
-                border-radius: 24px;
-                animation: grain 8s steps(10) infinite;
-              }
-
-              /* Radial ambient glow */
-              .nav-toolbar::after {
-                content: '';
-                position: absolute;
-                inset: -100px;
-                background: radial-gradient(circle at center, rgba(232, 175, 72, 0.08) 0%, transparent 70%);
-                pointer-events: none;
-                z-index: -1;
-              }
-
-              /* Golden ring indicator */
-              @keyframes spin-gold {
-                from { transform: translate(-50%, -50%) rotate(0deg); }
-                to { transform: translate(-50%, -50%) rotate(360deg); }
-              }
-
-              .golden-ring-indicator {
-                position: absolute;
-                pointer-events: none;
-                transition: all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1);
-                z-index: 0;
-              }
-
-              /* Layer 1: Glow */
-              .golden-glow {
-                position: absolute;
-                inset: -4px;
-                border-radius: 18px;
-                background: #e8af48;
-                opacity: 0.15;
-                filter: blur(12px);
-              }
-
-              /* Layer 2: Clip container */
-              .golden-clip {
-                position: absolute;
-                inset: 0;
-                border-radius: 18px;
-                overflow: hidden;
-              }
-
-              /* Layer 3: Rotating conic gradient */
-              .golden-gradient {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: 200%;
-                height: 200%;
-                transform: translate(-50%, -50%);
-                background: conic-gradient(
-                  from 0deg,
-                  #533517 0%,
-                  #c49746 15%,
-                  #feeaa5 30%,
-                  #ffffff 33%,
-                  #ffc0cb 34.5%,
-                  #87ceeb 36%,
-                  #533517 37.5%,
-                  #c49746 45%,
-                  #feeaa5 60%,
-                  #533517 65%,
-                  #c49746 75%,
-                  #feeaa5 85%,
-                  #ffffff 88%,
-                  #ffc0cb 89.5%,
-                  #87ceeb 91%,
-                  #533517 92.5%,
-                  #c49746 97%,
-                  #533517 100%
-                );
-                animation: spin-gold 4.5s linear infinite;
-              }
-
-              /* Layer 4: Inner plate */
-              .golden-inner {
-                position: absolute;
-                inset: 2px;
-                border-radius: 16px;
-                background: rgba(18, 18, 28, 0.95);
-                backdrop-filter: blur(10px);
-              }
-
-              .nav-btn {
-                position: relative;
-                z-index: 1;
+              .glass-tab {
                 background: none;
                 border: none;
                 cursor: pointer;
-                padding: 12px 22px;
-                border-radius: 18px;
+                padding: 9px 20px;
+                border-radius: 17px;
                 font-family: 'DM Mono', monospace;
                 font-size: 11px;
-                letter-spacing: 0.08em;
-                transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-                color: #8a8aa8;
+                letter-spacing: .08em;
+                color: rgba(255,255,255,0.45);
                 text-transform: uppercase;
+                transition: all .45s cubic-bezier(0.2, 0.8, 0.2, 1);
+                position: relative;
                 outline: none;
               }
-
-              .nav-btn.active {
+              .glass-tab:hover:not(.glass-active) {
+                color: rgba(255,255,255,0.7);
+              }
+              .glass-tab:active {
+                transform: scale(0.95);
+              }
+              .glass-active {
                 color: #fff;
-                animation: bounce-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+                background: rgba(255,255,255,0.13);
+                backdrop-filter: blur(20px) saturate(200%);
+                -webkit-backdrop-filter: blur(20px) saturate(200%);
+                box-shadow:
+                  0 2px 8px rgba(0,0,0,0.2),
+                  0 0 0 0.5px rgba(255,255,255,0.18),
+                  inset 0 1px 0 rgba(255,255,255,0.25),
+                  inset 0 -0.5px 0 rgba(255,255,255,0.06);
               }
-
-              @keyframes bounce-scale {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.25); }
-                100% { transform: scale(1); }
+              .glass-tab-lyra {
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
               }
-
-              .nav-btn:not(.active):hover {
-                color: #d8d8ec;
+              .glass-tab-lyra .lyra-text {
+                font-family: 'Courier New', Courier, monospace;
+                font-weight: 800;
+                font-size: 13px;
+                text-transform: lowercase;
+                letter-spacing: 1px;
               }
             `}
           </style>
-
-          <div
-            className="nav-toolbar"
-            style={{
-              position: "relative",
-              display: "flex",
-              gap: 6,
-              alignItems: "center",
-              background: "rgba(18, 18, 28, 0.7)",
-              backdropFilter: "blur(40px) saturate(150%)",
-              WebkitBackdropFilter: "blur(40px) saturate(150%)",
-              padding: "8px",
-              borderRadius: "24px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
-            }}
-          >
-            {/* Golden Ring Indicator */}
-            {activeButtonBounds && (
-              <div
-                className="golden-ring-indicator"
-                style={{
-                  left: activeButtonBounds.left,
-                  top: activeButtonBounds.top,
-                  width: activeButtonBounds.width,
-                  height: activeButtonBounds.height
-                }}
-              >
-                <div className="golden-glow" />
-                <div className="golden-clip">
-                  <div className="golden-gradient" />
-                </div>
-                <div className="golden-inner" />
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            {[
-              ["dashboard", "Dashboard"],
-              ["trades", "Trades"],
-              ["journal", "Journal"],
-              ["analytics", "Analytics"],
-              ["ai-coach", <span key="lyra" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: "'Courier New', Courier, monospace", fontWeight: 800, fontSize: 11, textTransform: "lowercase", letterSpacing: 1 }}>
-                  <span style={{ color: "#7ca5d4" }}>l</span>
-                  <span style={{ color: "#8bc268" }}>y</span>
-                  <span style={{ color: "#e45e54" }}>r</span>
-                  <span style={{ color: "#fabf53" }}>a</span>
-                </span>
-                <span style={{ fontSize: 13 }}>✨</span>
-              </span>]
-            ].map(([v, l]) => (
-              <button
-                key={v}
-                ref={el => navButtonRefs.current[v] = el}
-                className={`nav-btn ${view === v ? "active" : ""}`}
-                onClick={() => setView(v)}
-              >
-                {typeof l === "string" ? l : l}
-              </button>
+          <div className="glass-tabbar">
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"]].map(([v, l]) => (
+              <button key={v} className={`glass-tab ${view === v ? "glass-active" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
+            <button
+              className={`glass-tab glass-tab-lyra ${view === "ai-coach" ? "glass-active" : ""}`}
+              onClick={() => setView("ai-coach")}
+            >
+              <span className="lyra-text">
+                <span style={{ color: view === "ai-coach" ? "#7ca5d4" : "rgba(124,165,212,0.6)" }}>l</span>
+                <span style={{ color: view === "ai-coach" ? "#8bc268" : "rgba(139,194,104,0.6)" }}>y</span>
+                <span style={{ color: view === "ai-coach" ? "#e45e54" : "rgba(228,94,84,0.6)" }}>r</span>
+                <span style={{ color: view === "ai-coach" ? "#fabf53" : "rgba(250,191,83,0.6)" }}>a</span>
+              </span>
+              <span style={{ fontSize: 13, display: "inline-block", opacity: view === "ai-coach" ? 1 : 0.5 }}>✨</span>
+            </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button className="ghost" onClick={() => { setShowImport(true); setImportResult(null); setImportPreview(null); }}>Import CSV</button>
