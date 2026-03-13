@@ -238,6 +238,7 @@ function TradingJournal() {
     }
   });
   const [view, setView] = useState("dashboard");
+  const [chartTimeframe, setChartTimeframe] = useState("This Week");
   const [showForm, setShowForm] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
 
@@ -415,10 +416,42 @@ function TradingJournal() {
 
   const filtered = filterSession === "All" ? trades : trades.filter(t => t.session === filterSession);
 
+  // Calculate chart trades based on timeframe
+  const chartTrades = (() => {
+    if (chartTimeframe === "All Time") return trades;
+    
+    // Create a new date and calculate local time without timezone shifts
+    const today = new Date();
+    const estDateString = today.toLocaleString("en-US", { timeZone: "America/New_York" });
+    const now = new Date(estDateString);
+    now.setHours(0, 0, 0, 0);
+
+    let startDate = new Date(now);
+    if (chartTimeframe === "This Week") {
+      // Get Monday of current week
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+      startDate.setDate(diff);
+    } else if (chartTimeframe === "This Month") {
+      startDate.setDate(1);
+    }
+    
+    return trades.filter(t => {
+      // Interpret trade date as local
+      if (!t.date || typeof t.date !== 'string') return false;
+      const parts = t.date.split("T")[0].split(" ")[0].split("-");
+      if (parts.length < 3) return false;
+      
+      const [y, m, d] = parts;
+      const tradeDate = new Date(y, m - 1, d);
+      return tradeDate >= startDate;
+    });
+  })();
+
   // Calculate daily P&L grouped by date
   const dailyPnl = (() => {
     const byDate = {};
-    trades.forEach(t => {
+    chartTrades.forEach(t => {
       const date = t.date;
       if (!byDate[date]) {
         byDate[date] = { date, pnl: 0 };
@@ -428,7 +461,6 @@ function TradingJournal() {
     // Sort by date (oldest to newest)
     return Object.values(byDate).sort((a, b) => new Date(a.date) - new Date(b.date));
   })();
-  const maxDailyPnl = Math.max(...dailyPnl.map(d => Math.abs(d.pnl)), 1);
 
   // Calculate cumulative P&L
   const cumulativePnl = (() => {
@@ -438,7 +470,10 @@ function TradingJournal() {
       return { date: d.date, cumPnl: cumulative };
     });
   })();
-  const maxCumPnl = Math.max(...cumulativePnl.map(d => Math.abs(d.cumPnl)), 1);
+  
+  // Guard against empty arrays returning -Infinity
+  const maxDailyPnl = dailyPnl.length > 0 ? Math.max(...dailyPnl.map(d => Math.abs(d.pnl)), 1) : 1;
+  const maxCumPnl = cumulativePnl.length > 0 ? Math.max(...cumulativePnl.map(d => Math.abs(d.cumPnl)), 1) : 1;
 
   const previewPnl = form.entry && form.exit && form.size ? calcPnl({ ...form, entry: +form.entry, exit: +form.exit, size: +form.size }) : null;
 
@@ -790,10 +825,10 @@ function TradingJournal() {
               onClick={() => setView("ai-coach")}
             >
               <span className="lyra-text">
-                <span style={{ color: "#e45e54" }}>l</span>
-                <span style={{ color: "#f28b57" }}>y</span>
-                <span style={{ color: "#fabf53" }}>r</span>
-                <span style={{ color: "#8bc268" }}>a</span>
+                <span style={{ color: "#7ca5d4" }}>l</span>
+                <span style={{ color: "#8bc268" }}>y</span>
+                <span style={{ color: "#e45e54" }}>r</span>
+                <span style={{ color: "#fabf53" }}>a</span>
               </span>
               <span style={{ fontSize: 13, display: "inline-block" }}>✨</span>
             </button>
@@ -825,6 +860,15 @@ function TradingJournal() {
                     )}
                   </div>
                 ))}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <p style={{ fontFamily: "Syne,sans-serif", fontSize: 16, fontWeight: 700, color: "#fff", margin: 0 }}></p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["This Week", "This Month", "All Time"].map(tf => (
+                    <button key={tf} className={`nb ${chartTimeframe === tf ? "on" : ""}`} style={{ border: "1px solid #181828", padding: "6px 12px", fontSize: 11 }} onClick={() => setChartTimeframe(tf)}>{tf}</button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
@@ -1280,7 +1324,8 @@ function TradingJournal() {
                           [selectedJournalDate]: {
                             ...prev[selectedJournalDate],
                             text: e.target.value,
-                            images: prev[selectedJournalDate]?.images || []
+                            images: prev[selectedJournalDate]?.images || [],
+                            postSession: prev[selectedJournalDate]?.postSession || ''
                           }
                         };
                         console.log('Updated journal entries:', updated);
@@ -1295,6 +1340,47 @@ function TradingJournal() {
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 12,
                       lineHeight: 1.6
+                    }}
+                  />
+                </div>
+
+                {/* Post-Session Review */}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <p className="lbl" style={{ margin: 0 }}>Post-Session Review</p>
+                    <span style={{ fontSize: 9, color: "#7fffb2", fontFamily: "'DM Mono', monospace", letterSpacing: ".1em" }}>END OF DAY</span>
+                  </div>
+                  <textarea
+                    value={journalEntries[selectedJournalDate]?.postSession || ''}
+                    onChange={(e) => {
+                      setJournalEntries(prev => {
+                        const updated = {
+                          ...prev,
+                          [selectedJournalDate]: {
+                            text: prev[selectedJournalDate]?.text || '',
+                            images: prev[selectedJournalDate]?.images || [],
+                            postSession: e.target.value
+                          }
+                        };
+                        return updated;
+                      });
+                    }}
+                    placeholder="Reflect on the day's trading:
+• How did I execute my plan?
+• What worked well today?
+• What mistakes did I make and why?
+• Key lessons learned
+• Emotional state throughout the session
+• What will I do differently tomorrow?"
+                    style={{
+                      width: "100%",
+                      minHeight: 250,
+                      resize: "vertical",
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 12,
+                      lineHeight: 1.6,
+                      background: "#09090f",
+                      border: "1px solid #7fffb222"
                     }}
                   />
                 </div>
@@ -1482,9 +1568,20 @@ function TradingJournal() {
                             </span>
                           </div>
                           {journalEntries[date]?.text && (
-                            <p style={{ fontSize: 11, color: "#999", marginTop: 8, lineHeight: 1.6 }}>
-                              {journalEntries[date].text.substring(0, 150)}{journalEntries[date].text.length > 150 ? '...' : ''}
-                            </p>
+                            <div style={{ marginTop: 8 }}>
+                              <p style={{ fontSize: 9, color: "#666", marginBottom: 4, letterSpacing: ".1em" }}>PRE-MARKET</p>
+                              <p style={{ fontSize: 11, color: "#999", lineHeight: 1.6 }}>
+                                {journalEntries[date].text.substring(0, 120)}{journalEntries[date].text.length > 120 ? '...' : ''}
+                              </p>
+                            </div>
+                          )}
+                          {journalEntries[date]?.postSession && (
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #181828" }}>
+                              <p style={{ fontSize: 9, color: "#7fffb2", marginBottom: 4, letterSpacing: ".1em" }}>POST-SESSION</p>
+                              <p style={{ fontSize: 11, color: "#999", lineHeight: 1.6 }}>
+                                {journalEntries[date].postSession.substring(0, 120)}{journalEntries[date].postSession.length > 120 ? '...' : ''}
+                              </p>
+                            </div>
                           )}
                         </div>
                       ))}
