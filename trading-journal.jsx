@@ -254,16 +254,8 @@ function TradingJournal() {
   const [showStrategyManager, setShowStrategyManager] = useState(false);
   const [newStrategy, setNewStrategy] = useState("");
   const [isDark, setIsDark] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tradingJournalTheme');
-      if (saved !== null) {
-        return JSON.parse(saved);
-      }
-      // Default to system preference
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } catch (error) {
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+    // Always use system preference
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const [aiLoading, setAiLoading] = useState(false);
   const [aiReport, setAiReport] = useState("");
@@ -291,24 +283,11 @@ function TradingJournal() {
     }
   }, [trades]);
 
-  // Save theme preference to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('tradingJournalTheme', JSON.stringify(isDark));
-    } catch (error) {
-      console.error('Failed to save theme to localStorage:', error);
-    }
-  }, [isDark]);
-
-  // Listen for system theme changes
+  // Listen for system theme changes and always sync
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
-      // Only update if user hasn't manually set a preference
-      const saved = localStorage.getItem('tradingJournalTheme');
-      if (saved === null) {
-        setIsDark(e.matches);
-      }
+      setIsDark(e.matches);
     };
 
     mediaQuery.addEventListener('change', handleChange);
