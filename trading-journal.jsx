@@ -742,28 +742,28 @@ function TradingJournal() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@700;800&display=swap');
         body { background: ${isDark ? "#06060d" : "#f9f9f2"}; margin: 0; }
         *{box-sizing:border-box;margin:0;padding:0;}
-        ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#1e1e30;border-radius:2px;}
+        ::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:rgba(255,255,255,0.03);border-radius:10px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:10px;border:2px solid transparent;background-clip:padding-box;}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18);background-clip:padding-box;}
         .nb{background:none;border:none;cursor:pointer;padding:10px 18px;border-radius:14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);color:#8a8aa8;text-transform:uppercase;position:relative;}
         .nb.on{color:#fff;background:rgba(255,255,255,.18);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);}
         .nb:hover{color:#d8d8ec;background:rgba(255,255,255,0.08);}
-        .card{background:#0c0c16;border:1px solid #181828;border-radius:8px;padding:20px;}
-        .gbtn{background:#7fffb2;color:#06060d;border:none;cursor:pointer;padding:10px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;transition:all .2s;text-transform:uppercase;}
-        .gbtn:hover{background:#5de89a;transform:translateY(-1px);}
+        .card{background:rgba(255,255,255,0.06);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);}
+        .gbtn{background:rgba(127,255,178,0.9);color:#06060d;border:none;cursor:pointer;padding:12px 24px;border-radius:12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);text-transform:uppercase;box-shadow:0 4px 16px rgba(127,255,178,0.3), inset 0 1px 0 rgba(255,255,255,0.4);}
+        .gbtn:hover{background:rgba(127,255,178,1);transform:translateY(-2px);box-shadow:0 8px 24px rgba(127,255,178,0.4), inset 0 1px 0 rgba(255,255,255,0.5);}
         .gbtn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-        .ghost{background:none;border:1px solid #222235;color:#ccc;cursor:pointer;padding:6px 13px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;transition:all .2s;text-transform:uppercase;}
-        .ghost:hover{border-color:#5de89a;color:#5de89a;}
-        input,select,textarea{background:#0a0a14;border:1px solid #181828;color:#d8d8ec;padding:8px 12px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;width:100%;transition:border .2s;outline:none;}
-        input:focus,select:focus,textarea:focus{border-color:#7fffb2;}
+        .ghost{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#ccc;cursor:pointer;padding:8px 16px;border-radius:10px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);text-transform:uppercase;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+        .ghost:hover{border-color:rgba(127,255,178,0.4);background:rgba(127,255,178,0.08);color:#7fffb2;box-shadow:0 4px 12px rgba(127,255,178,0.15);}
+        input,select,textarea{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#d8d8ec;padding:10px 14px;border-radius:10px;font-family:'DM Mono',monospace;font-size:12px;width:100%;transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);outline:none;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+        input:focus,select:focus,textarea:focus{border-color:rgba(127,255,178,0.6);background:rgba(255,255,255,0.08);box-shadow:0 0 0 3px rgba(127,255,178,0.1), inset 0 1px 0 rgba(255,255,255,0.1);}
         select option{background:#0a0a14;}
         .pos{color:#7fffb2;}.neg{color:#ff4466;}
         .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;letter-spacing:.05em;}
         .ai-text{white-space:pre-wrap;line-height:1.8;font-size:12px;color:#9a9abc;font-style:italic;}
-        .trow{border-bottom:1px solid #0f0f1e;transition:background .15s;cursor:pointer;}
-        .trow:hover{background:#0e0e1c;}
+        .trow{border-bottom:1px solid rgba(255,255,255,0.06);transition:all .3s cubic-bezier(0.4, 0.0, 0.2, 1);cursor:pointer;}
+        .trow:hover{background:rgba(255,255,255,0.04);transform:scale(1.002);}
         .pulse{animation:p 1.8s infinite;}
         @keyframes p{0%,100%{opacity:1;}50%{opacity:.4;}}
-        .ov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
-        .modal{background:#0c0c18;border:1px solid #22223a;border-radius:12px;padding:28px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;}
+        .ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(20px) saturate(120%);-webkit-backdrop-filter:blur(20px) saturate(120%);}
+        .modal{background:rgba(12,12,24,0.85);backdrop-filter:blur(60px) saturate(180%);-webkit-backdrop-filter:blur(60px) saturate(180%);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:32px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);}
         .lbl{font-size:10px;color:#8888a8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:block;}
         .tv-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:8px;letter-spacing:.1em;background:rgba(0,221,255,.1);color:#00ddff;margin-left:6px;vertical-align:middle;}
       `}</style>
@@ -775,9 +775,27 @@ function TradingJournal() {
         </button>
       </div>
 
-      <div style={{ background: "#06060d", minHeight: "100vh", filter: isDark ? "none" : "invert(1) hue-rotate(180deg)", transition: "filter 0.3s ease" }}>
+      <div style={{
+        background: "linear-gradient(135deg, #06060d 0%, #0a0a15 50%, #0d0d1a 100%)",
+        minHeight: "100vh",
+        filter: isDark ? "none" : "invert(1) hue-rotate(180deg)",
+        transition: "filter 0.3s ease"
+      }}>
         {/* HEADER */}
-        <div style={{ borderBottom: "1px solid #0f0f1e", padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#080810" }}>
+        <div style={{
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          padding: "16px 32px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "rgba(8,8,16,0.6)",
+          backdropFilter: "blur(30px) saturate(150%)",
+          WebkitBackdropFilter: "blur(30px) saturate(150%)",
+          position: "sticky",
+          top: 0,
+          zIndex: 40,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.1)"
+        }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <div
               onClick={() => setView("dashboard")}
