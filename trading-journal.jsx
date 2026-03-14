@@ -262,8 +262,32 @@ function TradingJournal() {
       return [];
     }
   });
+
+  // Custom emotions
+  const [customEmotions, setCustomEmotions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalCustomEmotions');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
+
+  // Custom mistakes
+  const [customMistakes, setCustomMistakes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tradingJournalCustomMistakes');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
   const [showStrategyManager, setShowStrategyManager] = useState(false);
   const [newStrategy, setNewStrategy] = useState("");
+  const [showEmotionManager, setShowEmotionManager] = useState(false);
+  const [newEmotion, setNewEmotion] = useState("");
+  const [showMistakeManager, setShowMistakeManager] = useState(false);
+  const [newMistake, setNewMistake] = useState("");
   const [isDark, setIsDark] = useState(() => {
     // Always use system preference
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -313,6 +337,24 @@ function TradingJournal() {
       console.error('Failed to save custom strategies to localStorage:', error);
     }
   }, [customStrategies]);
+
+  // Save custom emotions to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalCustomEmotions', JSON.stringify(customEmotions));
+    } catch (error) {
+      console.error('Failed to save custom emotions to localStorage:', error);
+    }
+  }, [customEmotions]);
+
+  // Save custom mistakes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('tradingJournalCustomMistakes', JSON.stringify(customMistakes));
+    } catch (error) {
+      console.error('Failed to save custom mistakes to localStorage:', error);
+    }
+  }, [customMistakes]);
 
   // Save API key to localStorage
   useEffect(() => {
@@ -557,6 +599,36 @@ function TradingJournal() {
     setCustomStrategies(prev => prev.filter(s => s !== strategy));
   }
 
+  function addCustomEmotion() {
+    const trimmed = newEmotion.trim();
+    if (!trimmed) return;
+    if (EMOTIONS.includes(trimmed) || customEmotions.includes(trimmed)) {
+      alert('Emotion already exists!');
+      return;
+    }
+    setCustomEmotions(prev => [...prev, trimmed]);
+    setNewEmotion("");
+  }
+
+  function deleteCustomEmotion(emotion) {
+    setCustomEmotions(prev => prev.filter(e => e !== emotion));
+  }
+
+  function addCustomMistake() {
+    const trimmed = newMistake.trim();
+    if (!trimmed) return;
+    if (MISTAKES.includes(trimmed) || customMistakes.includes(trimmed)) {
+      alert('Mistake already exists!');
+      return;
+    }
+    setCustomMistakes(prev => [...prev, trimmed]);
+    setNewMistake("");
+  }
+
+  function deleteCustomMistake(mistake) {
+    setCustomMistakes(prev => prev.filter(m => m !== mistake));
+  }
+
   function openEditStrategy(trade) {
     setEditStrategyTrade(trade);
     setEditStrategyValue(trade.strategy);
@@ -740,12 +812,14 @@ function TradingJournal() {
     setNotesImages([]);
   }
 
-  // Combined strategy list (default + custom)
+  // Combined lists (default + custom)
   const allStrategies = [...STRATEGIES, ...customStrategies];
+  const allEmotions = [...EMOTIONS, ...customEmotions];
+  const allMistakes = [...MISTAKES, ...customMistakes];
 
   const stratPerf = allStrategies.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
-  const emotPerf = EMOTIONS.map(e => { const em = trades.filter(t => t.emotion === e); return { name: e, count: em.length, pnl: em.reduce((a, t) => a + t.pnl, 0) }; }).filter(e => e.count > 0).sort((a, b) => b.pnl - a.pnl);
-  const mistakePerf = MISTAKES.map(m => { const mk = trades.filter(t => t.mistake === m); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
+  const emotPerf = allEmotions.map(e => { const em = trades.filter(t => t.emotion === e); return { name: e, count: em.length, pnl: em.reduce((a, t) => a + t.pnl, 0) }; }).filter(e => e.count > 0).sort((a, b) => b.pnl - a.pnl);
+  const mistakePerf = allMistakes.map(m => { const mk = trades.filter(t => t.mistake === m); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
   return (
@@ -1999,23 +2073,31 @@ function TradingJournal() {
                 </select>
               </div>
               <div style={{ gridColumn: "span 2" }}>
-                <span className="lbl">Emotional State</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span className="lbl" style={{ margin: 0 }}>Emotional State</span>
+                  <button className="ghost" onClick={() => setShowEmotionManager(true)} style={{ padding: "2px 8px", fontSize: 9 }}>Manage</button>
+                </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {EMOTIONS.map(e => {
+                  {allEmotions.map(e => {
                     const col = emotionColors[e] || "#888";
+                    const isCustom = customEmotions.includes(e);
                     return (
-                      <button key={e} onClick={() => setForm(p => ({ ...p, emotion: e }))} style={{ padding: "4px 9px", border: `1px solid ${form.emotion === e ? col : "#1a1a2a"}`, borderRadius: 4, background: form.emotion === e ? `${col}18` : "none", color: form.emotion === e ? col : "#bbb", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{e}</button>
+                      <button key={e} onClick={() => setForm(p => ({ ...p, emotion: e }))} style={{ padding: "4px 9px", border: `1px solid ${form.emotion === e ? col : "#1a1a2a"}`, borderRadius: 4, background: form.emotion === e ? `${col}18` : "none", color: form.emotion === e ? (isCustom ? "#7fffb2" : col) : (isCustom ? "#7fffb2" : "#bbb"), cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{e}</button>
                     );
                   })}
                 </div>
               </div>
               <div style={{ gridColumn: "span 2" }}>
-                <span className="lbl">Mistakes / Errors</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span className="lbl" style={{ margin: 0 }}>Mistakes / Errors</span>
+                  <button className="ghost" onClick={() => setShowMistakeManager(true)} style={{ padding: "2px 8px", fontSize: 9 }}>Manage</button>
+                </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {MISTAKES.map(m => {
+                  {allMistakes.map(m => {
                     const col = mistakeColors[m] || "#888";
+                    const isCustom = customMistakes.includes(m);
                     return (
-                      <button key={m} onClick={() => setForm(p => ({ ...p, mistake: m }))} style={{ padding: "4px 9px", border: `1px solid ${form.mistake === m ? col : "#1a1a2a"}`, borderRadius: 4, background: form.mistake === m ? `${col}18` : "none", color: form.mistake === m ? col : "#bbb", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{m}</button>
+                      <button key={m} onClick={() => setForm(p => ({ ...p, mistake: m }))} style={{ padding: "4px 9px", border: `1px solid ${form.mistake === m ? col : "#1a1a2a"}`, borderRadius: 4, background: form.mistake === m ? `${col}18` : "none", color: form.mistake === m ? (isCustom ? "#7fffb2" : col) : (isCustom ? "#7fffb2" : "#bbb"), cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{m}</button>
                     );
                   })}
                 </div>
@@ -2092,6 +2174,110 @@ function TradingJournal() {
         </div>
       )}
 
+      {/* EMOTION MANAGER MODAL */}
+      {showEmotionManager && (
+        <div onClick={() => setShowEmotionManager(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 500, width: "90%", maxHeight: "80vh", overflow: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Manage Emotions</p>
+              <button onClick={() => setShowEmotionManager(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <p className="lbl" style={{ marginBottom: 8 }}>Add Custom Emotion</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="e.g., Frustrated"
+                  value={newEmotion}
+                  onChange={e => setNewEmotion(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && addCustomEmotion()}
+                  style={{ flex: 1 }}
+                />
+                <button className="gbtn" onClick={addCustomEmotion}>Add</button>
+              </div>
+            </div>
+
+            <div>
+              <p className="lbl" style={{ marginBottom: 12 }}>Default Emotions</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                {EMOTIONS.map(e => (
+                  <div key={e} style={{ padding: "6px 12px", background: "#111120", border: "1px solid #222235", borderRadius: 4, fontSize: 11, color: "#aaa" }}>
+                    {e}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {customEmotions.length > 0 && (
+              <div>
+                <p className="lbl" style={{ marginBottom: 12 }}>Custom Emotions</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {customEmotions.map(e => (
+                    <div key={e} style={{ padding: "6px 12px", background: "#7fffb218", border: "1px solid #7fffb244", borderRadius: 4, fontSize: 11, color: "#7fffb2", display: "flex", alignItems: "center", gap: 8 }}>
+                      {e}
+                      <button onClick={() => deleteCustomEmotion(e)} style={{ background: "none", border: "none", color: "#ff4466", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MISTAKE MANAGER MODAL */}
+      {showMistakeManager && (
+        <div onClick={() => setShowMistakeManager(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 500, width: "90%", maxHeight: "80vh", overflow: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Manage Mistakes</p>
+              <button onClick={() => setShowMistakeManager(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <p className="lbl" style={{ marginBottom: 8 }}>Add Custom Mistake</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="e.g., Ignored Setup"
+                  value={newMistake}
+                  onChange={e => setNewMistake(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && addCustomMistake()}
+                  style={{ flex: 1 }}
+                />
+                <button className="gbtn" onClick={addCustomMistake}>Add</button>
+              </div>
+            </div>
+
+            <div>
+              <p className="lbl" style={{ marginBottom: 12 }}>Default Mistakes</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+                {MISTAKES.map(m => (
+                  <div key={m} style={{ padding: "6px 12px", background: "#111120", border: "1px solid #222235", borderRadius: 4, fontSize: 11, color: "#aaa" }}>
+                    {m}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {customMistakes.length > 0 && (
+              <div>
+                <p className="lbl" style={{ marginBottom: 12 }}>Custom Mistakes</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {customMistakes.map(m => (
+                    <div key={m} style={{ padding: "6px 12px", background: "#7fffb218", border: "1px solid #7fffb244", borderRadius: 4, fontSize: 11, color: "#7fffb2", display: "flex", alignItems: "center", gap: 8 }}>
+                      {m}
+                      <button onClick={() => deleteCustomMistake(m)} style={{ background: "none", border: "none", color: "#ff4466", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* EDIT STRATEGY MODAL */}
       {editStrategyTrade && (
         <div onClick={() => setEditStrategyTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
@@ -2134,7 +2320,7 @@ function TradingJournal() {
               </p>
               <p className="lbl" style={{ marginBottom: 12 }}>Emotional State</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {EMOTIONS.map(e => {
+                {allEmotions.map(e => {
                   const col = emotionColors[e] || "#888";
                   const isSelected = editEmotionValue === e;
                   return (
@@ -2183,7 +2369,7 @@ function TradingJournal() {
               </p>
               <p className="lbl" style={{ marginBottom: 12 }}>Mistake/Error</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {MISTAKES.map(m => {
+                {allMistakes.map(m => {
                   const col = mistakeColors[m] || "#888";
                   const isSelected = editMistakeValue === m;
                   return (
