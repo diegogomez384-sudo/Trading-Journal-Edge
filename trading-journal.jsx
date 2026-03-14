@@ -2,6 +2,7 @@ const { useState, useEffect, useRef } = React;
 
 const STRATEGIES = ["Trend Follow", "Breakout", "Pullback", "Mean Reversion", "Scalp", "VWAP Fade", "Opening Range", "News Play", "Overnight Gap", "ICT/SMC", "Order Flow", "Momentum", "Other"];
 const EMOTIONS = ["Calm", "Disciplined", "Confident", "In the Zone", "FOMO", "Anxious", "Greedy", "Fearful", "Revenge", "Bored", "Overconfident", "Distracted"];
+const MISTAKES = ["None", "Premature Entry", "Late Entry", "Premature Exit", "Late Exit", "Wrong Size", "Ignored Stop", "Over-Traded", "Against Plan", "Chased Price", "Averaging Down", "Emotional Trade", "Poor Risk/Reward"];
 const INSTRUMENTS = ["ES", "NQ", "MES", "MNQ", "YM", "RTY", "CL", "GC", "SI", "ZB", "ZN", "6E", "Other"];
 const SESSIONS = ["Pre-Market", "RTH Open", "RTH Mid", "RTH Close", "Overnight"];
 const POINT_VALUES = { ES: 50, NQ: 20, MES: 5, MNQ: 2, YM: 5, RTY: 50, CL: 1000, GC: 100, SI: 5000, ZB: 1000, ZN: 1000, "6E": 125000, Other: 50 };
@@ -11,6 +12,16 @@ const emotionColors = {
   "Calm": "#7fffb2", "Disciplined": "#00ddff", "Confident": "#aaff44", "In the Zone": "#ffdd00",
   "FOMO": "#ff9900", "Anxious": "#ff7744", "Greedy": "#ff5566", "Fearful": "#ff3355",
   "Revenge": "#ff0033", "Bored": "#666688", "Overconfident": "#ffbb00", "Distracted": "#bb66ff"
+};
+
+const mistakeColors = {
+  "None": "#7fffb2",
+  "Premature Entry": "#ff9900", "Late Entry": "#ff9900",
+  "Premature Exit": "#ff7744", "Late Exit": "#ff7744",
+  "Wrong Size": "#ff5566", "Ignored Stop": "#ff0033",
+  "Over-Traded": "#ff3355", "Against Plan": "#ff0033",
+  "Chased Price": "#ffbb00", "Averaging Down": "#ff5566",
+  "Emotional Trade": "#ff7744", "Poor Risk/Reward": "#ff9900"
 };
 
 function calcPnl(trade) {
@@ -271,7 +282,7 @@ function TradingJournal() {
       return "";
     }
   });
-  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", session: "RTH Open", notes: "" });
+  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", mistake: "None", session: "RTH Open", notes: "" });
 
 
   // Save trades to localStorage whenever they change
@@ -714,6 +725,7 @@ function TradingJournal() {
 
   const stratPerf = allStrategies.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
   const emotPerf = EMOTIONS.map(e => { const em = trades.filter(t => t.emotion === e); return { name: e, count: em.length, pnl: em.reduce((a, t) => a + t.pnl, 0) }; }).filter(e => e.count > 0).sort((a, b) => b.pnl - a.pnl);
+  const mistakePerf = MISTAKES.map(m => { const mk = trades.filter(t => t.mistake === m); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
   return (
@@ -1686,6 +1698,28 @@ function TradingJournal() {
               </div>
 
               <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Mistakes \u2192 P&L</p>
+                {mistakePerf.map(m => {
+                  const max = Math.max(...mistakePerf.map(x => Math.abs(x.pnl)), 1);
+                  const col = mistakeColors[m.name] || "#888";
+                  return (
+                    <div key={m.name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: col }}>{m.name}</span>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <span style={{ fontSize: 10, color: "#aaa" }}>{m.count}t</span>
+                          <span className={m.pnl >= 0 ? "pos" : "neg"} style={{ fontSize: 13, fontFamily: "Syne,sans-serif", fontWeight: 700 }}>{m.pnl >= 0 ? "+" : ""}${m.pnl.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div style={{ background: "#111120", borderRadius: 3, height: 4 }}>
+                        <div style={{ width: `${(Math.abs(m.pnl) / max) * 100}%`, height: 4, borderRadius: 3, background: m.pnl >= 0 ? col : "#ff4466" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="card">
                 <p className="lbl" style={{ marginBottom: 16 }}>Session Breakdown</p>
                 {sessPerf.map(s => (
                   <div key={s.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f0f1e" }}>
@@ -1947,6 +1981,17 @@ function TradingJournal() {
                     const col = emotionColors[e] || "#888";
                     return (
                       <button key={e} onClick={() => setForm(p => ({ ...p, emotion: e }))} style={{ padding: "4px 9px", border: `1px solid ${form.emotion === e ? col : "#1a1a2a"}`, borderRadius: 4, background: form.emotion === e ? `${col}18` : "none", color: form.emotion === e ? col : "#bbb", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{e}</button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ gridColumn: "span 2" }}>
+                <span className="lbl">Mistakes / Errors</span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {MISTAKES.map(m => {
+                    const col = mistakeColors[m] || "#888";
+                    return (
+                      <button key={m} onClick={() => setForm(p => ({ ...p, mistake: m }))} style={{ padding: "4px 9px", border: `1px solid ${form.mistake === m ? col : "#1a1a2a"}`, borderRadius: 4, background: form.mistake === m ? `${col}18` : "none", color: form.mistake === m ? col : "#bbb", cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{m}</button>
                     );
                   })}
                 </div>
