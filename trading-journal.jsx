@@ -1244,12 +1244,12 @@ function TradingJournal() {
                 ))}
               </div>
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
+                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Mistake", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
                 </div>
                 {filtered.map(t => (
                   <div key={t.id}>
-                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 55px 80px 80px 100px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
+                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
                       <div onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} style={{ cursor: "pointer" }}>
                         <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
                           {t.ticker}
@@ -1268,6 +1268,9 @@ function TradingJournal() {
                       <span className="tag" style={{ color: emotionColors[t.emotion] || "#888", background: `${emotionColors[t.emotion] || "#888"}12`, width: "fit-content", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); openEditEmotion(t); }} title="Click to edit emotion">
                         {t.emotion}
                         <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
+                      </span>
+                      <span className="tag" style={{ color: mistakeColors[t.mistake || "None"] || "#888", background: `${mistakeColors[t.mistake || "None"] || "#888"}12`, width: "fit-content", cursor: "pointer", fontSize: 9 }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} title={t.mistake || "None"}>
+                        {(t.mistake || "None").length > 12 ? (t.mistake || "None").substring(0, 12) + "..." : (t.mistake || "None")}
                       </span>
                       <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
