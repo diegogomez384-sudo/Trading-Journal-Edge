@@ -353,6 +353,10 @@ function TradingJournal() {
   const [editEmotionTrade, setEditEmotionTrade] = useState(null); // trade being edited
   const [editEmotionValue, setEditEmotionValue] = useState("");
 
+  // --- Edit mistake state ---
+  const [editMistakeTrade, setEditMistakeTrade] = useState(null); // trade being edited
+  const [editMistakeValue, setEditMistakeValue] = useState("");
+
   // --- Notes editor state ---
   const [editNotesTrade, setEditNotesTrade] = useState(null); // trade being edited
   const [notesText, setNotesText] = useState("");
@@ -583,6 +587,22 @@ function TradingJournal() {
     ));
     setEditEmotionTrade(null);
     setEditEmotionValue("");
+  }
+
+  function openEditMistake(trade) {
+    setEditMistakeTrade(trade);
+    setEditMistakeValue(trade.mistake || "None");
+  }
+
+  function saveEditMistake() {
+    if (!editMistakeTrade || !editMistakeValue) return;
+    setTrades(prev => prev.map(t =>
+      t.id === editMistakeTrade.id
+        ? { ...t, mistake: editMistakeValue }
+        : t
+    ));
+    setEditMistakeTrade(null);
+    setEditMistakeValue("");
   }
 
   function openEditTime(trade) {
@@ -1269,8 +1289,9 @@ function TradingJournal() {
                         {t.emotion}
                         <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
                       </span>
-                      <span className="tag" style={{ color: mistakeColors[t.mistake || "None"] || "#888", background: `${mistakeColors[t.mistake || "None"] || "#888"}12`, width: "fit-content", cursor: "pointer", fontSize: 9 }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} title={t.mistake || "None"}>
+                      <span className="tag" style={{ color: mistakeColors[t.mistake || "None"] || "#888", background: `${mistakeColors[t.mistake || "None"] || "#888"}12`, width: "fit-content", cursor: "pointer", fontSize: 9 }} onClick={(e) => { e.stopPropagation(); openEditMistake(t); }} title="Click to edit mistake">
                         {(t.mistake || "None").length > 12 ? (t.mistake || "None").substring(0, 12) + "..." : (t.mistake || "None")}
+                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
                       </span>
                       <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
@@ -2142,6 +2163,55 @@ function TradingJournal() {
             <div style={{ display: "flex", gap: 10 }}>
               <button className="ghost" onClick={() => setEditEmotionTrade(null)} style={{ flex: 1 }}>Cancel</button>
               <button className="gbtn" onClick={saveEditEmotion} style={{ flex: 1 }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MISTAKE MODAL */}
+      {editMistakeTrade && (
+        <div onClick={() => setEditMistakeTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "28px 32px", maxWidth: 500, width: "90%" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Edit Mistake/Error</p>
+              <button onClick={() => setEditMistakeTrade(null)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", fontSize: 24 }}>×</button>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 12, color: "#999", marginBottom: 16 }}>
+                Trade: <span style={{ color: "#fff", fontWeight: 600 }}>{editMistakeTrade.ticker}</span> | {formatDateDisplay(editMistakeTrade.date)}
+                {editMistakeTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
+              </p>
+              <p className="lbl" style={{ marginBottom: 12 }}>Mistake/Error</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {MISTAKES.map(m => {
+                  const col = mistakeColors[m] || "#888";
+                  const isSelected = editMistakeValue === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setEditMistakeValue(m)}
+                      style={{
+                        padding: "8px 14px",
+                        border: `1px solid ${isSelected ? col : "#1a1a2a"}`,
+                        borderRadius: 4,
+                        background: isSelected ? `${col}18` : "none",
+                        color: isSelected ? col : "#666",
+                        cursor: "pointer",
+                        fontSize: 11,
+                        fontFamily: "'DM Mono',monospace",
+                        transition: "all .15s",
+                        letterSpacing: ".05em"
+                      }}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="ghost" onClick={() => setEditMistakeTrade(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="gbtn" onClick={saveEditMistake} style={{ flex: 1 }}>Save Changes</button>
             </div>
           </div>
         </div>
