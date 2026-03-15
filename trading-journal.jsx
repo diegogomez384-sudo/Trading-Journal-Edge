@@ -2967,16 +2967,23 @@ function TradingJournal() {
               {/* Journal Name */}
               <div style={{ marginBottom: 32, position: "relative" }}>
                 <p style={{
-                  fontFamily: "'Courier New', monospace",
+                  fontFamily: "'Courier New', Courier, monospace",
                   fontSize: 24,
                   fontWeight: 700,
-                  background: "linear-gradient(90deg, #e45e54, #f28b57, #fabf53, #8bc268, #7ca5d4, #a08ecc, #c581b6)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: 2,
-                  textTransform: "lowercase",
+                  letterSpacing: "1px",
                   margin: 0
-                }}>ultratrack</p>
+                }}>
+                  <span style={{ color: "#e45e54" }}>u</span>
+                  <span style={{ color: "#f28b57" }}>l</span>
+                  <span style={{ color: "#fabf53" }}>t</span>
+                  <span style={{ color: "#8bc268" }}>r</span>
+                  <span style={{ color: "#7ca5d4" }}>a</span>
+                  <span style={{ color: "#a08ecc" }}>t</span>
+                  <span style={{ color: "#c581b6" }}>r</span>
+                  <span style={{ color: "#e45e54" }}>a</span>
+                  <span style={{ color: "#f28b57" }}>c</span>
+                  <span style={{ color: "#fabf53" }}>k</span>
+                </p>
                 <p style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Trading Journal</p>
               </div>
 
