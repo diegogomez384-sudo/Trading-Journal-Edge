@@ -395,7 +395,23 @@ function TradingJournal() {
         })
         .sort((a, b) => new Date(a.Date) - new Date(b.Date));
 
-      setEconomicEvents(filteredEvents);
+      // Guest API key returns old sample data, so use realistic sample events if no future events found
+      if (filteredEvents.length === 0) {
+        const sampleEvents = [
+          { CalendarId: "1", Date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).setHours(8, 30), Event: "Durable Goods Orders", Category: "Change in the value of new orders for manufactured durable goods", Importance: 3, Actual: "", Forecast: "0.5%", Previous: "0.8%" },
+          { CalendarId: "2", Date: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).setHours(10, 0), Event: "Consumer Confidence", Category: "Measures consumer optimism about the economy", Importance: 4, Actual: "", Forecast: "106.0", Previous: "104.7" },
+          { CalendarId: "3", Date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).setHours(8, 30), Event: "Core CPI (YoY)", Category: "Core inflation excluding food and energy prices", Importance: 5, Actual: "", Forecast: "3.2%", Previous: "3.3%" },
+          { CalendarId: "4", Date: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).setHours(8, 30), Event: "CPI (YoY)", Category: "Year-over-year change in consumer price index", Importance: 5, Actual: "", Forecast: "2.9%", Previous: "3.0%" },
+          { CalendarId: "5", Date: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).setHours(14, 0), Event: "Fed Interest Rate Decision", Category: "FOMC announces target federal funds rate", Importance: 5, Actual: "", Forecast: "4.50%", Previous: "4.50%" },
+          { CalendarId: "6", Date: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).setHours(8, 30), Event: "Building Permits", Category: "Measures housing construction activity and confidence", Importance: 2, Actual: "", Forecast: "1.48M", Previous: "1.46M" },
+          { CalendarId: "7", Date: new Date(now.getTime() + 0 * 24 * 60 * 60 * 1000).setHours(8, 30), Event: "Initial Jobless Claims", Category: "Weekly measure of new unemployment insurance claims", Importance: 3, Actual: "", Forecast: "220K", Previous: "215K" },
+          { CalendarId: "8", Date: new Date(now.getTime() + 0 * 24 * 60 * 60 * 1000).setHours(10, 0), Event: "Existing Home Sales", Category: "Measures the number of previously-owned homes sold", Importance: 2, Actual: "", Forecast: "4.15M", Previous: "4.02M" },
+          { CalendarId: "9", Date: new Date(now.getTime() + 0 * 24 * 60 * 60 * 1000).setHours(14, 0), Event: "FOMC Meeting Minutes", Category: "Detailed record of the Federal Reserve's policy meeting discussions", Importance: 5, Actual: "", Forecast: "", Previous: "" }
+        ].map(e => ({ ...e, Date: new Date(e.Date).toISOString() }));
+        setEconomicEvents(sampleEvents);
+      } else {
+        setEconomicEvents(filteredEvents);
+      }
     } catch (error) {
       console.error('Failed to fetch economic events:', error);
       setEconomicEvents([]);
@@ -2071,7 +2087,7 @@ function TradingJournal() {
                   ))}
                 </div>
                 <p style={{ fontSize: 10, color: "#666", marginTop: 16, fontStyle: "italic", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 6 }}>
-                  💡 <strong>Data Source:</strong> Live economic calendar data powered by Trading Economics API. Events are updated automatically and show USA economic releases for the next 7 days. <a href="https://tradingeconomics.com" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>Learn more</a>
+                  💡 <strong>Data Source:</strong> Economic calendar powered by <a href="https://tradingeconomics.com" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>Trading Economics API</a>. Currently showing sample data (free guest API key has limitations). For live data, sign up for a free developer account at <a href="https://developer.tradingeconomics.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>developer.tradingeconomics.com</a> and replace the guest key in the code.
                 </p>
               </div>
             </div>
