@@ -1884,29 +1884,101 @@ function TradingJournal() {
               <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Economic Calendar</p>
               <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>USA economic events — Track high-impact news that moves the futures markets.</p>
 
-              <div className="card">
-                <p style={{ fontSize: 11, color: "#ff9900", marginBottom: 16, padding: "12px", background: "rgba(255,153,0,0.1)", borderRadius: 8, border: "1px solid rgba(255,153,0,0.2)" }}>
-                  📡 <strong>Note:</strong> Economic calendar data is currently being integrated. This feature will pull live events from Investing.com calendar API showing USA events with impact ratings, times, and descriptions.
-                </p>
-
-                <div style={{ marginBottom: 24 }}>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7fffb2", marginBottom: 12 }}>Today's Events</p>
-                  <p style={{ color: "#666", fontSize: 12, fontStyle: "italic" }}>Loading economic calendar...</p>
+              {/* Today's Events */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7fffb2" }}>Today's Events</p>
+                  <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>
+                    {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  </span>
                 </div>
 
-                <div>
-                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7ca5d4", marginBottom: 12 }}>Upcoming Events</p>
-                  <p style={{ color: "#666", fontSize: 12, fontStyle: "italic" }}>Loading upcoming events...</p>
-                </div>
+                {/* Sample Today Events */}
+                {[
+                  { time: "8:30 AM ET", name: "Initial Jobless Claims", impact: 3, description: "Weekly measure of new unemployment insurance claims", actual: "212K", forecast: "220K", previous: "215K" },
+                  { time: "10:00 AM ET", name: "Existing Home Sales", impact: 2, description: "Measures the number of previously-owned homes sold", actual: "—", forecast: "4.15M", previous: "4.02M" },
+                  { time: "2:00 PM ET", name: "FOMC Meeting Minutes", impact: 5, description: "Detailed record of the Federal Reserve's policy meeting discussions", actual: "—", forecast: "—", previous: "—" }
+                ].map((event, idx) => {
+                  const impactColors = { 5: "#ff0033", 4: "#ff5566", 3: "#ff9900", 2: "#ffbb00", 1: "#8888a8" };
+                  const impactColor = impactColors[event.impact];
+                  return (
+                    <div key={idx} style={{ padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, marginBottom: 10, border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
+                        <div style={{ minWidth: 80 }}>
+                          <p style={{ fontSize: 11, color: "#7fffb2", fontWeight: 600, fontFamily: "monospace" }}>{event.time}</p>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{event.name}</p>
+                            <div style={{ display: "flex", gap: 1 }}>
+                              {Array(5).fill(0).map((_, i) => (
+                                <span key={i} style={{ color: i < event.impact ? impactColor : "#222", fontSize: 11 }}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          <p style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>{event.description}</p>
+                          <div style={{ display: "flex", gap: 12, fontSize: 10 }}>
+                            <span style={{ color: "#7ca5d4" }}>Actual: <strong>{event.actual}</strong></span>
+                            <span style={{ color: "#666" }}>Forecast: {event.forecast}</span>
+                            <span style={{ color: "#666" }}>Previous: {event.previous}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="card" style={{ marginTop: 20 }}>
+              {/* Upcoming Events (Next 7 Days) */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7ca5d4" }}>Upcoming Events</p>
+                  <span style={{ fontSize: 10, color: "#666", fontStyle: "italic" }}>Next 7 days</span>
+                </div>
+
+                {/* Sample Upcoming Events */}
+                {[
+                  { date: "Tomorrow", time: "8:30 AM ET", name: "Durable Goods Orders", impact: 3, description: "Change in the value of new orders for manufactured durable goods" },
+                  { date: "Tomorrow", time: "10:00 AM ET", name: "Consumer Confidence", impact: 4, description: "Measures consumer optimism about the economy" },
+                  { date: "Mar 17", time: "8:30 AM ET", name: "Core CPI (YoY)", impact: 5, description: "Core inflation excluding food and energy prices" },
+                  { date: "Mar 17", time: "8:30 AM ET", name: "CPI (YoY)", impact: 5, description: "Year-over-year change in consumer price index" },
+                  { date: "Mar 19", time: "2:00 PM ET", name: "Fed Interest Rate Decision", impact: 5, description: "FOMC announces target federal funds rate" },
+                  { date: "Mar 20", time: "8:30 AM ET", name: "Building Permits", impact: 2, description: "Measures housing construction activity and confidence" }
+                ].map((event, idx) => {
+                  const impactColors = { 5: "#ff0033", 4: "#ff5566", 3: "#ff9900", 2: "#ffbb00", 1: "#8888a8" };
+                  const impactColor = impactColors[event.impact];
+                  return (
+                    <div key={idx} style={{ padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: 10, marginBottom: 10, border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{ minWidth: 60 }}>
+                          <p style={{ fontSize: 10, color: "#ff9900", fontWeight: 600, textTransform: "uppercase" }}>{event.date}</p>
+                          <p style={{ fontSize: 11, color: "#7ca5d4", fontFamily: "monospace", marginTop: 2 }}>{event.time}</p>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{event.name}</p>
+                            <div style={{ display: "flex", gap: 1 }}>
+                              {Array(5).fill(0).map((_, i) => (
+                                <span key={i} style={{ color: i < event.impact ? impactColor : "#222", fontSize: 11 }}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          <p style={{ fontSize: 11, color: "#888" }}>{event.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Impact Ratings Guide */}
+              <div className="card">
                 <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 14, color: "#fff", marginBottom: 12 }}>📊 Event Impact Ratings</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {[
-                    { stars: 5, label: "Extreme Impact", color: "#ff0033", example: "FOMC Rate Decision, NFP" },
-                    { stars: 4, label: "High Impact", color: "#ff5566", example: "CPI, PPI, Retail Sales" },
-                    { stars: 3, label: "Medium Impact", color: "#ff9900", example: "GDP, PMI, Consumer Sentiment" },
+                    { stars: 5, label: "Extreme Impact", color: "#ff0033", example: "FOMC Rate Decision, NFP, CPI" },
+                    { stars: 4, label: "High Impact", color: "#ff5566", example: "PPI, Retail Sales, Consumer Confidence" },
+                    { stars: 3, label: "Medium Impact", color: "#ff9900", example: "GDP, PMI, Jobless Claims" },
                     { stars: 2, label: "Low Impact", color: "#ffbb00", example: "Housing Data, Trade Balance" },
                     { stars: 1, label: "Minimal Impact", color: "#8888a8", example: "Minor Regional Reports" }
                   ].map(({ stars, label, color, example }) => (
@@ -1923,6 +1995,9 @@ function TradingJournal() {
                     </div>
                   ))}
                 </div>
+                <p style={{ fontSize: 10, color: "#666", marginTop: 16, fontStyle: "italic", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 6 }}>
+                  💡 <strong>Note:</strong> Economic events are currently showing sample data. To connect live data, integrate with an economic calendar API (Finnhub, TradingEconomics, or custom scraper).
+                </p>
               </div>
             </div>
           )}
