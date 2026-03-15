@@ -310,6 +310,7 @@ function TradingJournal() {
   const [expandedTrade, setExpandedTrade] = useState(null);
   const [tradeAi, setTradeAi] = useState({});
   const [filterSession, setFilterSession] = useState("All");
+  const [expandedWeeks, setExpandedWeeks] = useState({});
   const [apiKey, setApiKey] = useState(() => {
     try {
       const saved = localStorage.getItem('anthropicApiKey');
@@ -533,6 +534,53 @@ function TradingJournal() {
   const maxDD = (() => { let peak = 0, mdd = 0, run = 0; trades.slice().reverse().forEach(t => { run += t.pnl; if (run > peak) peak = run; const d = peak - run; if (d > mdd) mdd = d; }); return mdd; })();
 
   const filtered = filterSession === "All" ? trades : trades.filter(t => t.session === filterSession);
+
+  // Group trades by week
+  const getWeekKey = (dateStr) => {
+    const date = new Date(dateStr);
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const days = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
+    const weekNum = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+    return `${date.getFullYear()}-W${weekNum}`;
+  };
+
+  const getWeekRange = (weekKey) => {
+    const [year, weekPart] = weekKey.split('-W');
+    const weekNum = parseInt(weekPart);
+    const jan1 = new Date(year, 0, 1);
+    const daysToMonday = (jan1.getDay() === 0 ? -6 : 1) - jan1.getDay();
+    const firstMonday = new Date(year, 0, 1 + daysToMonday);
+    const weekStart = new Date(firstMonday.getTime() + (weekNum - 1) * 7 * 24 * 60 * 60 * 1000);
+    const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+
+    const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
+  };
+
+  const isCurrentWeek = (weekKey) => {
+    const now = new Date();
+    return getWeekKey(now.toISOString().split('T')[0]) === weekKey;
+  };
+
+  const groupedByWeek = filtered.reduce((acc, trade) => {
+    const weekKey = getWeekKey(trade.date);
+    if (!acc[weekKey]) {
+      acc[weekKey] = [];
+    }
+    acc[weekKey].push(trade);
+    return acc;
+  }, {});
+
+  // Sort weeks by most recent first
+  const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => b.localeCompare(a));
+
+  // Auto-expand current week by default
+  if (sortedWeeks.length > 0 && !Object.keys(expandedWeeks).length) {
+    const currentWeek = sortedWeeks.find(w => isCurrentWeek(w));
+    if (currentWeek && !expandedWeeks[currentWeek]) {
+      setExpandedWeeks({ [currentWeek]: true });
+    }
+  }
 
   // Calculate chart trades based on timeframe
   const chartTrades = (() => {
@@ -1417,11 +1465,61 @@ function TradingJournal() {
                   <button key={s} className={`nb ${filterSession === s ? "on" : ""}`} style={{ border: "1px solid #181828" }} onClick={() => setFilterSession(s)}>{s}</button>
                 ))}
               </div>
-              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e" }}>
-                  {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Mistake", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
-                </div>
-                {filtered.map(t => (
+
+              {/* Week Groups */}
+              {sortedWeeks.map(weekKey => {
+                const weekTrades = groupedByWeek[weekKey];
+                const weekPnL = weekTrades.reduce((sum, t) => sum + t.pnl, 0);
+                const isExpanded = expandedWeeks[weekKey];
+                const isCurrent = isCurrentWeek(weekKey);
+
+                return (
+                  <div key={weekKey} className="card" style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+                    {/* Week Header */}
+                    <div
+                      onClick={() => setExpandedWeeks(prev => ({ ...prev, [weekKey]: !prev[weekKey] }))}
+                      style={{
+                        padding: "16px 20px",
+                        background: isCurrent ? "rgba(127,255,178,0.05)" : "rgba(255,255,255,0.02)",
+                        borderBottom: isExpanded ? "1px solid #0f0f1e" : "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = isCurrent ? "rgba(127,255,178,0.08)" : "rgba(255,255,255,0.04)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = isCurrent ? "rgba(127,255,178,0.05)" : "rgba(255,255,255,0.02)"}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span style={{ fontSize: 18, color: "#666", transition: "transform 0.2s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: "#fff", margin: 0 }}>
+                              {isCurrent ? "This Week" : getWeekRange(weekKey)}
+                            </p>
+                            {isCurrent && <span style={{ fontSize: 9, color: "#7fffb2", background: "rgba(127,255,178,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>CURRENT</span>}
+                          </div>
+                          <p style={{ fontSize: 11, color: "#888", margin: 0, marginTop: 2 }}>{weekTrades.length} trade{weekTrades.length !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ textAlign: "right" }}>
+                          <p style={{ fontSize: 10, color: "#888", margin: 0, marginBottom: 2 }}>Week P&L</p>
+                          <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, margin: 0 }} className={weekPnL >= 0 ? "pos" : "neg"}>
+                            {weekPnL >= 0 ? "+" : ""}${weekPnL.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Week Trades - Collapsible */}
+                    {isExpanded && (
+                      <div>
+                        <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e", background: "#09090f" }}>
+                          {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Mistake", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                        </div>
+                        {weekTrades.map(t => (
                   <div key={t.id}>
                     <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
                       <div onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} style={{ cursor: "pointer" }}>
@@ -1502,8 +1600,12 @@ function TradingJournal() {
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
