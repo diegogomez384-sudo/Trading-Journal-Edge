@@ -946,6 +946,90 @@ function TradingJournal() {
   const mistakePerf = allMistakes.map(m => { const mk = trades.filter(t => getMistakes(t).includes(m)); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
+  // Calculate streaks
+  const calculateDayStreaks = () => {
+    // Group trades by date and calculate daily P&L
+    const dailyMap = {};
+    trades.forEach(t => {
+      const date = t.date.split('T')[0];
+      if (!dailyMap[date]) dailyMap[date] = 0;
+      dailyMap[date] += t.pnl;
+    });
+
+    const sortedDays = Object.keys(dailyMap).sort();
+    let currentStreak = 0;
+    let currentType = null;
+    let bestWinStreak = 0;
+    let bestLossStreak = 0;
+
+    sortedDays.forEach(day => {
+      const isWin = dailyMap[day] > 0;
+      if (currentType === null) {
+        currentType = isWin ? 'win' : 'loss';
+        currentStreak = 1;
+      } else if ((isWin && currentType === 'win') || (!isWin && currentType === 'loss')) {
+        currentStreak++;
+      } else {
+        if (currentType === 'win') bestWinStreak = Math.max(bestWinStreak, currentStreak);
+        else bestLossStreak = Math.max(bestLossStreak, currentStreak);
+        currentType = isWin ? 'win' : 'loss';
+        currentStreak = 1;
+      }
+    });
+
+    if (currentType === 'win') bestWinStreak = Math.max(bestWinStreak, currentStreak);
+    else bestLossStreak = Math.max(bestLossStreak, currentStreak);
+
+    const lastDayType = sortedDays.length > 0 ? (dailyMap[sortedDays[sortedDays.length - 1]] > 0 ? 'win' : 'loss') : null;
+
+    return {
+      current: lastDayType === currentType ? currentStreak : 0,
+      currentType: lastDayType,
+      bestWin: bestWinStreak,
+      bestLoss: bestLossStreak
+    };
+  };
+
+  const calculateTradeStreaks = () => {
+    if (trades.length === 0) return { current: 0, currentType: null, bestWin: 0, bestLoss: 0 };
+
+    const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let currentStreak = 0;
+    let currentType = null;
+    let bestWinStreak = 0;
+    let bestLossStreak = 0;
+
+    sortedTrades.forEach(t => {
+      const isWin = t.pnl > 0;
+      if (currentType === null) {
+        currentType = isWin ? 'win' : 'loss';
+        currentStreak = 1;
+      } else if ((isWin && currentType === 'win') || (!isWin && currentType === 'loss')) {
+        currentStreak++;
+      } else {
+        if (currentType === 'win') bestWinStreak = Math.max(bestWinStreak, currentStreak);
+        else bestLossStreak = Math.max(bestLossStreak, currentStreak);
+        currentType = isWin ? 'win' : 'loss';
+        currentStreak = 1;
+      }
+    });
+
+    if (currentType === 'win') bestWinStreak = Math.max(bestWinStreak, currentStreak);
+    else bestLossStreak = Math.max(bestLossStreak, currentStreak);
+
+    const lastTradeType = sortedTrades.length > 0 ? (sortedTrades[sortedTrades.length - 1].pnl > 0 ? 'win' : 'loss') : null;
+
+    return {
+      current: lastTradeType === currentType ? currentStreak : 0,
+      currentType: lastTradeType,
+      bestWin: bestWinStreak,
+      bestLoss: bestLossStreak
+    };
+  };
+
+  const dayStreaks = calculateDayStreaks();
+  const tradeStreaks = calculateTradeStreaks();
+
   return (
     <div style={{ fontFamily: "'DM Mono','Courier New',monospace", background: isDark ? "#06060d" : "#f9f9f2", minHeight: "100vh", color: "#d8d8ec" }}>
       <style>{`
@@ -1957,6 +2041,74 @@ function TradingJournal() {
           {/* ANALYTICS */}
           {view === "analytics" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {/* Day Streak Tracker */}
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Day Streak Tracker</p>
+
+                {/* Current Streak */}
+                <div style={{ marginBottom: 24, textAlign: "center", padding: "20px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: `2px solid ${dayStreaks.currentType === 'win' ? 'rgba(127,255,178,0.3)' : 'rgba(255,68,102,0.3)'}` }}>
+                  <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Current Streak</p>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 48, fontWeight: 700, color: dayStreaks.currentType === 'win' ? "#7fffb2" : "#ff4466", margin: 0, lineHeight: 1 }}>
+                    {dayStreaks.current}
+                  </p>
+                  <p style={{ fontSize: 12, color: dayStreaks.currentType === 'win' ? "#7fffb2" : "#ff4466", marginTop: 8, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {dayStreaks.currentType === 'win' ? '🔥 Winning Days' : '❄️ Losing Days'}
+                  </p>
+                </div>
+
+                {/* Best Streaks */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ background: "rgba(127,255,178,0.05)", padding: 16, borderRadius: 8, border: "1px solid rgba(127,255,178,0.2)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Best Win Streak</p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontSize: 32, fontWeight: 700, color: "#7fffb2", margin: 0 }}>{dayStreaks.bestWin}</p>
+                      <p style={{ fontSize: 12, color: "#7fffb2" }}>days</p>
+                    </div>
+                  </div>
+                  <div style={{ background: "rgba(255,68,102,0.05)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,68,102,0.2)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Worst Loss Streak</p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontSize: 32, fontWeight: 700, color: "#ff4466", margin: 0 }}>{dayStreaks.bestLoss}</p>
+                      <p style={{ fontSize: 12, color: "#ff4466" }}>days</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trade Streak Tracker */}
+              <div className="card">
+                <p className="lbl" style={{ marginBottom: 16 }}>Trade Streak Tracker</p>
+
+                {/* Current Streak */}
+                <div style={{ marginBottom: 24, textAlign: "center", padding: "20px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: `2px solid ${tradeStreaks.currentType === 'win' ? 'rgba(127,255,178,0.3)' : 'rgba(255,68,102,0.3)'}` }}>
+                  <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Current Streak</p>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 48, fontWeight: 700, color: tradeStreaks.currentType === 'win' ? "#7fffb2" : "#ff4466", margin: 0, lineHeight: 1 }}>
+                    {tradeStreaks.current}
+                  </p>
+                  <p style={{ fontSize: 12, color: tradeStreaks.currentType === 'win' ? "#7fffb2" : "#ff4466", marginTop: 8, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {tradeStreaks.currentType === 'win' ? '🔥 Winning Trades' : '❄️ Losing Trades'}
+                  </p>
+                </div>
+
+                {/* Best Streaks */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ background: "rgba(127,255,178,0.05)", padding: 16, borderRadius: 8, border: "1px solid rgba(127,255,178,0.2)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Best Win Streak</p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontSize: 32, fontWeight: 700, color: "#7fffb2", margin: 0 }}>{tradeStreaks.bestWin}</p>
+                      <p style={{ fontSize: 12, color: "#7fffb2" }}>trades</p>
+                    </div>
+                  </div>
+                  <div style={{ background: "rgba(255,68,102,0.05)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,68,102,0.2)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Worst Loss Streak</p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <p style={{ fontFamily: "Syne,sans-serif", fontSize: 32, fontWeight: 700, color: "#ff4466", margin: 0 }}>{tradeStreaks.bestLoss}</p>
+                      <p style={{ fontSize: 12, color: "#ff4466" }}>trades</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="card">
                 <p className="lbl" style={{ marginBottom: 16 }}>Strategy Performance</p>
                 {stratPerf.map(s => {
