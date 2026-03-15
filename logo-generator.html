@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ultratrack Logo Generator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #06060d;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    #preview {
+      background: #0c0c16;
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid #181828;
+    }
+
+    .logo {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      font-size: 52px;
+      letter-spacing: 1px;
+    }
+
+    canvas {
+      border: 1px solid #181828;
+      border-radius: 8px;
+      background: transparent;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background: #0c0c16;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid #181828;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      color: #8888a8;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    input[type="number"], select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #d8d8ec;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+
+    button {
+      background: rgba(127,255,178,0.9);
+      color: #06060d;
+      border: none;
+      cursor: pointer;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 16px rgba(127,255,178,0.3);
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: rgba(127,255,178,1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(127,255,178,0.4);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="preview">
+    <div class="logo">
+      <span style="color: #e45e54;">u</span>
+      <span style="color: #f28b57;">l</span>
+      <span style="color: #fabf53;">t</span>
+      <span style="color: #8bc268;">r</span>
+      <span style="color: #7ca5d4;">a</span>
+      <span style="color: #a08ecc;">t</span>
+      <span style="color: #c581b6;">r</span>
+      <span style="color: #e45e54;">a</span>
+      <span style="color: #f28b57;">c</span>
+      <span style="color: #fabf53;">k</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Logo Size (px)</label>
+      <input type="number" id="fontSize" value="120" min="20" max="500" step="10">
+    </div>
+
+    <div class="control-group">
+      <label>Canvas Width (px)</label>
+      <input type="number" id="canvasWidth" value="800" min="100" max="2000" step="50">
+    </div>
+
+    <div class="control-group">
+      <label>Canvas Height (px)</label>
+      <input type="number" id="canvasHeight" value="300" min="100" max="1000" step="50">
+    </div>
+
+    <div class="control-group">
+      <label>Background</label>
+      <select id="bgType">
+        <option value="transparent">Transparent</option>
+        <option value="dark">Dark (#06060d)</option>
+        <option value="darkCard">Dark Card (#0c0c16)</option>
+        <option value="white">White</option>
+        <option value="black">Black</option>
+      </select>
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="centerText" checked>
+      <label for="centerText" style="text-transform: none;">Center Logo</label>
+    </div>
+
+    <button onclick="generateLogo()">Generate Logo</button>
+    <button onclick="downloadLogo()">Download PNG</button>
+  </div>
+
+  <canvas id="logoCanvas"></canvas>
+
+  <script>
+    const colors = [
+      '#e45e54', '#f28b57', '#fabf53', '#8bc268', '#7ca5d4',
+      '#a08ecc', '#c581b6', '#e45e54', '#f28b57', '#fabf53'
+    ];
+
+    const text = 'ultratrack';
+
+    function generateLogo() {
+      const canvas = document.getElementById('logoCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const fontSize = parseInt(document.getElementById('fontSize').value);
+      const canvasWidth = parseInt(document.getElementById('canvasWidth').value);
+      const canvasHeight = parseInt(document.getElementById('canvasHeight').value);
+      const bgType = document.getElementById('bgType').value;
+      const centerText = document.getElementById('centerText').checked;
+
+      // Set canvas size
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Set background
+      if (bgType !== 'transparent') {
+        const bgColors = {
+          'dark': '#06060d',
+          'darkCard': '#0c0c16',
+          'white': '#ffffff',
+          'black': '#000000'
+        };
+        ctx.fillStyle = bgColors[bgType];
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      // Set font
+      ctx.font = `700 ${fontSize}px 'Courier New', Courier, monospace`;
+      ctx.textBaseline = 'middle';
+
+      // Calculate total width for centering
+      let totalWidth = 0;
+      for (let i = 0; i < text.length; i++) {
+        totalWidth += ctx.measureText(text[i]).width;
+      }
+
+      // Starting position
+      let x = centerText ? (canvasWidth - totalWidth) / 2 : 50;
+      const y = canvasHeight / 2;
+
+      // Draw each letter
+      for (let i = 0; i < text.length; i++) {
+        ctx.fillStyle = colors[i];
+        ctx.fillText(text[i], x, y);
+        x += ctx.measureText(text[i]).width;
+      }
+    }
+
+    function downloadLogo() {
+      const canvas = document.getElementById('logoCanvas');
+      const link = document.createElement('a');
+      link.download = 'ultratrack-logo.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Generate initial logo
+    window.addEventListener('load', generateLogo);
+
+    // Re-generate on input change
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', generateLogo);
+      el.addEventListener('input', generateLogo);
+    });
+  </script>
+</body>
+</html>

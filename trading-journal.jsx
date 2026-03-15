@@ -24,6 +24,13 @@ const mistakeColors = {
   "Emotional Trade": "#ff7744", "Poor Risk/Reward": "#ff9900"
 };
 
+// Helper to normalize mistake field (backwards compat: string → array)
+function getMistakes(trade) {
+  if (!trade.mistake) return ["None"];
+  if (Array.isArray(trade.mistake)) return trade.mistake.length > 0 ? trade.mistake : ["None"];
+  return [trade.mistake]; // old string format
+}
+
 function calcPnl(trade) {
   const diff = trade.direction === "Long" ? trade.exit - trade.entry : trade.entry - trade.exit;
   return parseFloat((diff * trade.size * (POINT_VALUES[trade.market] || 50)).toFixed(2));
@@ -306,7 +313,7 @@ function TradingJournal() {
       return "";
     }
   });
-  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", mistake: "None", session: "RTH Open", notes: "" });
+  const [form, setForm] = useState({ date: new Date().toISOString().split("T")[0], ticker: "", market: "ES", direction: "Long", entry: "", exit: "", entryTime: "", exitTime: "", size: "1", strategy: "Opening Range", emotion: "Calm", mistake: ["None"], session: "RTH Open", notes: "" });
 
 
   // Save trades to localStorage whenever they change
@@ -397,7 +404,7 @@ function TradingJournal() {
 
   // --- Edit mistake state ---
   const [editMistakeTrade, setEditMistakeTrade] = useState(null); // trade being edited
-  const [editMistakeValue, setEditMistakeValue] = useState("");
+  const [editMistakeValue, setEditMistakeValue] = useState([]);
 
   // --- Notes editor state ---
   const [editNotesTrade, setEditNotesTrade] = useState(null); // trade being edited
@@ -663,18 +670,30 @@ function TradingJournal() {
 
   function openEditMistake(trade) {
     setEditMistakeTrade(trade);
-    setEditMistakeValue(trade.mistake || "None");
+    setEditMistakeValue(getMistakes(trade));
+  }
+
+  function toggleEditMistake(m) {
+    setEditMistakeValue(prev => {
+      if (m === "None") return ["None"];
+      const without = prev.filter(x => x !== "None");
+      if (without.includes(m)) {
+        const result = without.filter(x => x !== m);
+        return result.length === 0 ? ["None"] : result;
+      }
+      return [...without, m];
+    });
   }
 
   function saveEditMistake() {
-    if (!editMistakeTrade || !editMistakeValue) return;
+    if (!editMistakeTrade) return;
     setTrades(prev => prev.map(t =>
       t.id === editMistakeTrade.id
         ? { ...t, mistake: editMistakeValue }
         : t
     ));
     setEditMistakeTrade(null);
-    setEditMistakeValue("");
+    setEditMistakeValue([]);
   }
 
   function openEditTime(trade) {
@@ -819,7 +838,7 @@ function TradingJournal() {
 
   const stratPerf = allStrategies.map(s => { const st = trades.filter(t => t.strategy === s); const w = st.filter(t => t.pnl > 0); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0), wr: st.length ? Math.round(w.length / st.length * 100) : 0 }; }).filter(s => s.count > 0).sort((a, b) => b.pnl - a.pnl);
   const emotPerf = allEmotions.map(e => { const em = trades.filter(t => t.emotion === e); return { name: e, count: em.length, pnl: em.reduce((a, t) => a + t.pnl, 0) }; }).filter(e => e.count > 0).sort((a, b) => b.pnl - a.pnl);
-  const mistakePerf = allMistakes.map(m => { const mk = trades.filter(t => t.mistake === m); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
+  const mistakePerf = allMistakes.map(m => { const mk = trades.filter(t => getMistakes(t).includes(m)); return { name: m, count: mk.length, pnl: mk.reduce((a, t) => a + t.pnl, 0) }; }).filter(m => m.count > 0).sort((a, b) => b.pnl - a.pnl);
   const sessPerf = SESSIONS.map(s => { const st = trades.filter(t => t.session === s); return { name: s, count: st.length, pnl: st.reduce((a, t) => a + t.pnl, 0) }; }).filter(s => s.count > 0);
 
   return (
@@ -971,20 +990,26 @@ function TradingJournal() {
             `}
           </style>
           <div className="glass-tabbar">
-            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"]].map(([v, l]) => (
+            {[["dashboard", "Dashboard"], ["trades", "Trades"], ["journal", "Journal"], ["analytics", "Analytics"], ["news", "News"]].map(([v, l]) => (
               <button key={v} className={`glass-tab ${view === v ? "glass-active" : ""}`} onClick={() => setView(v)}>{l}</button>
             ))}
             <button
               className={`glass-tab glass-tab-lyra ${view === "ai-coach" ? "glass-active" : ""}`}
               onClick={() => setView("ai-coach")}
+              style={{
+                background: view === "ai-coach" ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.04)",
+                boxShadow: view === "ai-coach"
+                  ? "0 2px 8px rgba(0,0,0,0.2), 0 0 0 0.5px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -0.5px 0 rgba(255,255,255,0.06), 0 0 16px rgba(124,165,212,0.15), 0 0 16px rgba(228,94,84,0.1)"
+                  : "0 0 12px rgba(124,165,212,0.08), 0 0 12px rgba(250,191,83,0.06)"
+              }}
             >
               <span className="lyra-text">
-                <span style={{ color: view === "ai-coach" ? "#7ca5d4" : "rgba(124,165,212,0.6)" }}>l</span>
-                <span style={{ color: view === "ai-coach" ? "#8bc268" : "rgba(139,194,104,0.6)" }}>y</span>
-                <span style={{ color: view === "ai-coach" ? "#e45e54" : "rgba(228,94,84,0.6)" }}>r</span>
-                <span style={{ color: view === "ai-coach" ? "#fabf53" : "rgba(250,191,83,0.6)" }}>a</span>
+                <span style={{ color: "#7ca5d4" }}>l</span>
+                <span style={{ color: "#8bc268" }}>y</span>
+                <span style={{ color: "#e45e54" }}>r</span>
+                <span style={{ color: "#fabf53" }}>a</span>
               </span>
-              <span style={{ fontSize: 13, display: "inline-block", opacity: view === "ai-coach" ? 1 : 0.5 }}>✨</span>
+              <span style={{ fontSize: 13, display: "inline-block" }}>✨</span>
             </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1363,10 +1388,14 @@ function TradingJournal() {
                         {t.emotion}
                         <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
                       </span>
-                      <span className="tag" style={{ color: mistakeColors[t.mistake || "None"] || "#888", background: `${mistakeColors[t.mistake || "None"] || "#888"}12`, width: "fit-content", cursor: "pointer", fontSize: 9 }} onClick={(e) => { e.stopPropagation(); openEditMistake(t); }} title="Click to edit mistake">
-                        {(t.mistake || "None").length > 12 ? (t.mistake || "None").substring(0, 12) + "..." : (t.mistake || "None")}
-                        <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>✎</span>
-                      </span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3, cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); openEditMistake(t); }} title="Click to edit mistakes">
+                        {getMistakes(t).map((mk, i) => (
+                          <span key={i} className="tag" style={{ color: mistakeColors[mk] || "#888", background: `${mistakeColors[mk] || "#888"}12`, fontSize: 9 }}>
+                            {mk.length > 10 ? mk.substring(0, 10) + "…" : mk}
+                          </span>
+                        ))}
+                        <span style={{ fontSize: 8, opacity: 0.5, alignSelf: "center" }}>✎</span>
+                      </div>
                       <span style={{ fontSize: 12, color: "#bbb", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.size}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.entry}</span>
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
@@ -1849,6 +1878,55 @@ function TradingJournal() {
             </div>
           )}
 
+          {/* NEWS / ECONOMIC CALENDAR */}
+          {view === "news" && (
+            <div>
+              <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Economic Calendar</p>
+              <p style={{ color: "#aaa", fontSize: 12, marginBottom: 22 }}>USA economic events — Track high-impact news that moves the futures markets.</p>
+
+              <div className="card">
+                <p style={{ fontSize: 11, color: "#ff9900", marginBottom: 16, padding: "12px", background: "rgba(255,153,0,0.1)", borderRadius: 8, border: "1px solid rgba(255,153,0,0.2)" }}>
+                  📡 <strong>Note:</strong> Economic calendar data is currently being integrated. This feature will pull live events from Investing.com calendar API showing USA events with impact ratings, times, and descriptions.
+                </p>
+
+                <div style={{ marginBottom: 24 }}>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7fffb2", marginBottom: 12 }}>Today's Events</p>
+                  <p style={{ color: "#666", fontSize: 12, fontStyle: "italic" }}>Loading economic calendar...</p>
+                </div>
+
+                <div>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: "#7ca5d4", marginBottom: 12 }}>Upcoming Events</p>
+                  <p style={{ color: "#666", fontSize: 12, fontStyle: "italic" }}>Loading upcoming events...</p>
+                </div>
+              </div>
+
+              <div className="card" style={{ marginTop: 20 }}>
+                <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 14, color: "#fff", marginBottom: 12 }}>📊 Event Impact Ratings</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[
+                    { stars: 5, label: "Extreme Impact", color: "#ff0033", example: "FOMC Rate Decision, NFP" },
+                    { stars: 4, label: "High Impact", color: "#ff5566", example: "CPI, PPI, Retail Sales" },
+                    { stars: 3, label: "Medium Impact", color: "#ff9900", example: "GDP, PMI, Consumer Sentiment" },
+                    { stars: 2, label: "Low Impact", color: "#ffbb00", example: "Housing Data, Trade Balance" },
+                    { stars: 1, label: "Minimal Impact", color: "#8888a8", example: "Minor Regional Reports" }
+                  ].map(({ stars, label, color, example }) => (
+                    <div key={stars} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
+                      <div style={{ display: "flex", gap: 2 }}>
+                        {Array(5).fill(0).map((_, i) => (
+                          <span key={i} style={{ color: i < stars ? color : "#222", fontSize: 14 }}>★</span>
+                        ))}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ color, fontWeight: 600, fontSize: 12, marginBottom: 2 }}>{label}</p>
+                        <p style={{ color: "#666", fontSize: 10 }}>{example}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* AI COACH */}
           {view === "ai-coach" && (
             <div>
@@ -2096,8 +2174,18 @@ function TradingJournal() {
                   {allMistakes.map(m => {
                     const col = mistakeColors[m] || "#888";
                     const isCustom = customMistakes.includes(m);
+                    const isSelected = (form.mistake || []).includes(m);
                     return (
-                      <button key={m} onClick={() => setForm(p => ({ ...p, mistake: m }))} style={{ padding: "4px 9px", border: `1px solid ${form.mistake === m ? col : "#1a1a2a"}`, borderRadius: 4, background: form.mistake === m ? `${col}18` : "none", color: form.mistake === m ? (isCustom ? "#7fffb2" : col) : (isCustom ? "#7fffb2" : "#bbb"), cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{m}</button>
+                      <button key={m} onClick={() => setForm(p => {
+                        const cur = p.mistake || ["None"];
+                        if (m === "None") return { ...p, mistake: ["None"] };
+                        const without = cur.filter(x => x !== "None");
+                        if (without.includes(m)) {
+                          const result = without.filter(x => x !== m);
+                          return { ...p, mistake: result.length === 0 ? ["None"] : result };
+                        }
+                        return { ...p, mistake: [...without, m] };
+                      })} style={{ padding: "4px 9px", border: `1px solid ${isSelected ? col : "#1a1a2a"}`, borderRadius: 4, background: isSelected ? `${col}18` : "none", color: isSelected ? (isCustom ? "#7fffb2" : col) : (isCustom ? "#7fffb2" : "#bbb"), cursor: "pointer", fontSize: 10, fontFamily: "'DM Mono',monospace", transition: "all .15s", letterSpacing: ".05em" }}>{m}</button>
                     );
                   })}
                 </div>
@@ -2368,14 +2456,15 @@ function TradingJournal() {
                 {editMistakeTrade.source === "csv" && <span className="tv-badge" style={{ marginLeft: 8 }}>CSV</span>}
               </p>
               <p className="lbl" style={{ marginBottom: 12 }}>Mistake/Error</p>
+              <p style={{ fontSize: 10, color: "#666", marginBottom: 8 }}>Select multiple mistakes (click to toggle)</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {allMistakes.map(m => {
                   const col = mistakeColors[m] || "#888";
-                  const isSelected = editMistakeValue === m;
+                  const isSelected = (editMistakeValue || []).includes(m);
                   return (
                     <button
                       key={m}
-                      onClick={() => setEditMistakeValue(m)}
+                      onClick={() => toggleEditMistake(m)}
                       style={{
                         padding: "8px 14px",
                         border: `1px solid ${isSelected ? col : "#1a1a2a"}`,
