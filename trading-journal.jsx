@@ -2087,7 +2087,7 @@ function TradingJournal() {
                   ))}
                 </div>
                 <p style={{ fontSize: 10, color: "#666", marginTop: 16, fontStyle: "italic", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 6 }}>
-                  💡 <strong>Data Source:</strong> Economic calendar powered by <a href="https://tradingeconomics.com" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>Trading Economics API</a>. Currently showing sample data (free guest API key has limitations). For live data, sign up for a free developer account at <a href="https://developer.tradingeconomics.com/" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>developer.tradingeconomics.com</a> and replace the guest key in the code.
+                  💡 <strong>Data Source:</strong> Currently showing sample USA economic events. Live data via <a href="https://tradingeconomics.com" target="_blank" rel="noopener noreferrer" style={{ color: "#7ca5d4", textDecoration: "underline" }}>Trading Economics API</a> requires a paid subscription (USA data not included in free tier). Free tier only includes: Sweden, Mexico, New Zealand, Thailand. Events shown are realistic examples based on typical economic calendar patterns.
                 </p>
               </div>
             </div>
