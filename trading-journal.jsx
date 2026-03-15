@@ -311,6 +311,7 @@ function TradingJournal() {
   const [tradeAi, setTradeAi] = useState({});
   const [filterSession, setFilterSession] = useState("All");
   const [expandedWeeks, setExpandedWeeks] = useState({});
+  const [shareCardTrade, setShareCardTrade] = useState(null);
   const [apiKey, setApiKey] = useState(() => {
     try {
       const saved = localStorage.getItem('anthropicApiKey');
@@ -1516,12 +1517,12 @@ function TradingJournal() {
                     {/* Week Trades - Collapsible */}
                     {isExpanded && (
                       <div>
-                        <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e", background: "#09090f" }}>
-                          {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Mistake", "Size", "Entry", "Exit", "P&L", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
+                        <div style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 30px 40px", padding: "11px 20px", borderBottom: "1px solid #0f0f1e", background: "#09090f" }}>
+                          {["Ticker", "Dir", "Session", "Strategy", "Emotion", "Mistake", "Size", "Entry", "Exit", "P&L", "", "", ""].map(h => <p key={h} className="lbl" style={{ margin: 0 }}>{h}</p>)}
                         </div>
                         {weekTrades.map(t => (
                   <div key={t.id}>
-                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
+                    <div className="trow" style={{ display: "grid", gridTemplateColumns: "80px 55px 60px 110px 120px 120px 55px 80px 80px 100px 30px 30px 40px", padding: "13px 20px", alignItems: "center" }}>
                       <div onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)} style={{ cursor: "pointer" }}>
                         <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: "#fff" }}>
                           {t.ticker}
@@ -1554,6 +1555,7 @@ function TradingJournal() {
                       <span style={{ fontSize: 12, color: "#eee", cursor: "pointer" }} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.exit}</span>
                       <p style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, textAlign: "right", cursor: "pointer" }} className={t.pnl >= 0 ? "pos" : "neg"} onClick={() => setExpandedTrade(expandedTrade === t.id ? null : t.id)}>{t.pnl >= 0 ? "+" : ""}${t.pnl.toLocaleString()}</p>
                       <button onClick={(e) => { e.stopPropagation(); openEditNotes(t); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 4, color: (t.notesData?.text || t.notesData?.images?.length) ? "#7fffb2" : "#666", opacity: 0.7, transition: "all 0.2s" }} onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.transform = "scale(1.1)"; }} onMouseLeave={(e) => { e.target.style.opacity = 0.7; e.target.style.transform = "scale(1)"; }} title="Edit notes">📝</button>
+                      <button onClick={(e) => { e.stopPropagation(); setShareCardTrade(t); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: 4, color: "#7ca5d4", opacity: 0.7, transition: "all 0.2s" }} onMouseEnter={(e) => { e.target.style.opacity = 1; e.target.style.transform = "scale(1.1)"; }} onMouseLeave={(e) => { e.target.style.opacity = 0.7; e.target.style.transform = "scale(1)"; }} title="Share trade card">📤</button>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(t.id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: 4, color: "#ff4466", opacity: 0.6, transition: "opacity 0.2s" }} onMouseEnter={(e) => e.target.style.opacity = 1} onMouseLeave={(e) => e.target.style.opacity = 0.6}>×</button>
                     </div>
                     {expandedTrade === t.id && (
@@ -2933,6 +2935,152 @@ function TradingJournal() {
               <button className="ghost" onClick={() => setEditNotesTrade(null)} style={{ flex: 1 }}>Cancel</button>
               <button className="gbtn" onClick={saveEditNotes} style={{ flex: 1 }}>Save Notes</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SHARE TRADE CARD MODAL */}
+      {shareCardTrade && (
+        <div onClick={() => setShareCardTrade(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(10px)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: "32px", maxWidth: 600, width: "90%" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div>
+                <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Share Trade Card</p>
+                <p style={{ fontSize: 12, color: "#888" }}>Create a shareable image for social media</p>
+              </div>
+              <button onClick={() => setShareCardTrade(null)} style={{ background: "none", border: "none", fontSize: 24, color: "#666", cursor: "pointer", padding: 0 }}>×</button>
+            </div>
+
+            {/* Card Preview */}
+            <div id="trade-card-preview" style={{
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+              borderRadius: 16,
+              padding: 40,
+              marginBottom: 24,
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              {/* Decorative background elements */}
+              <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, background: "radial-gradient(circle, rgba(127,255,178,0.1), transparent)", borderRadius: "50%" }}></div>
+              <div style={{ position: "absolute", bottom: -30, left: -30, width: 150, height: 150, background: "radial-gradient(circle, rgba(124,165,212,0.1), transparent)", borderRadius: "50%" }}></div>
+
+              {/* Journal Name */}
+              <div style={{ marginBottom: 32, position: "relative" }}>
+                <p style={{
+                  fontFamily: "'Courier New', monospace",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  background: "linear-gradient(90deg, #e45e54, #f28b57, #fabf53, #8bc268, #7ca5d4, #a08ecc, #c581b6)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: 2,
+                  textTransform: "lowercase",
+                  margin: 0
+                }}>ultratrack</p>
+                <p style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Trading Journal</p>
+              </div>
+
+              {/* Main Trade Info */}
+              <div style={{ marginBottom: 24, position: "relative" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+                  <div>
+                    <p style={{ fontSize: 14, color: "#888", marginBottom: 4 }}>Symbol</p>
+                    <p style={{ fontFamily: "Syne,sans-serif", fontSize: 48, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1 }}>{shareCardTrade.ticker}</p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: 14, color: "#888", marginBottom: 4 }}>P&L</p>
+                    <p style={{
+                      fontFamily: "Syne,sans-serif",
+                      fontSize: 48,
+                      fontWeight: 700,
+                      color: shareCardTrade.pnl >= 0 ? "#7fffb2" : "#ff4466",
+                      margin: 0,
+                      lineHeight: 1
+                    }}>{shareCardTrade.pnl >= 0 ? "+" : ""}${shareCardTrade.pnl.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Trade Details Row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginTop: 24 }}>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Contracts</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0 }}>{shareCardTrade.size}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Direction</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: shareCardTrade.direction === "Long" ? "#7fffb2" : "#ff4466", margin: 0 }}>{shareCardTrade.direction}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Points</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0 }}>{Math.abs(shareCardTrade.exit - shareCardTrade.entry).toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Strategy & Date */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, position: "relative" }}>
+                <div style={{ background: "rgba(127,255,178,0.1)", padding: "8px 14px", borderRadius: 6, border: "1px solid rgba(127,255,178,0.2)" }}>
+                  <p style={{ fontSize: 11, color: "#7fffb2", fontWeight: 600, margin: 0 }}>{shareCardTrade.strategy}</p>
+                </div>
+                <p style={{ fontSize: 11, color: "#888", margin: 0 }}>{formatDateDisplay(shareCardTrade.date)}</p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                className="gbtn"
+                onClick={() => {
+                  // Create canvas from the preview div
+                  const card = document.getElementById('trade-card-preview');
+                  html2canvas(card, {
+                    backgroundColor: null,
+                    scale: 2,
+                    logging: false
+                  }).then(canvas => {
+                    canvas.toBlob(blob => {
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `trade-${shareCardTrade.ticker}-${shareCardTrade.date}.png`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    });
+                  });
+                }}
+                style={{ flex: 1 }}
+              >
+                💾 Download Image
+              </button>
+              <button
+                className="gbtn"
+                onClick={async () => {
+                  const card = document.getElementById('trade-card-preview');
+                  const canvas = await html2canvas(card, {
+                    backgroundColor: null,
+                    scale: 2,
+                    logging: false
+                  });
+                  canvas.toBlob(async blob => {
+                    try {
+                      await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                      ]);
+                      alert('Trade card copied to clipboard! Ready to paste in social media.');
+                    } catch (err) {
+                      alert('Could not copy to clipboard. Please use Download instead.');
+                    }
+                  });
+                }}
+                style={{ flex: 1 }}
+              >
+                📋 Copy to Clipboard
+              </button>
+            </div>
+
+            <p style={{ fontSize: 10, color: "#666", marginTop: 16, textAlign: "center", fontStyle: "italic" }}>
+              Tip: Download or copy the image to share on Twitter, Instagram, or Discord
+            </p>
           </div>
         </div>
       )}
