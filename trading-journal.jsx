@@ -312,6 +312,7 @@ function TradingJournal() {
   const [filterSession, setFilterSession] = useState("All");
   const [expandedWeeks, setExpandedWeeks] = useState({});
   const [shareCardTrade, setShareCardTrade] = useState(null);
+  const [sharePnLCard, setSharePnLCard] = useState(null); // "daily", "weekly", "monthly"
   const [apiKey, setApiKey] = useState(() => {
     try {
       const saved = localStorage.getItem('anthropicApiKey');
@@ -1127,6 +1128,22 @@ function TradingJournal() {
           {/* DASHBOARD */}
           {view === "dashboard" && (
             <div>
+              {/* Header with Share Buttons */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 style={{ fontFamily: "Syne,sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>Performance Overview</h2>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setSharePnLCard("daily")} className="ghost" style={{ padding: "6px 12px", fontSize: 10 }} title="Share daily P&L card">
+                    📤 Daily
+                  </button>
+                  <button onClick={() => setSharePnLCard("weekly")} className="ghost" style={{ padding: "6px 12px", fontSize: 10 }} title="Share weekly P&L card">
+                    📤 Weekly
+                  </button>
+                  <button onClick={() => setSharePnLCard("monthly")} className="ghost" style={{ padding: "6px 12px", fontSize: 10 }} title="Share monthly P&L card">
+                    📤 Monthly
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
                 {[
                   { l: "Net P&L", v: `${totalPnl >= 0 ? "+" : ""}$${totalPnl.toLocaleString()}`, pos: totalPnl >= 0, big: true },
@@ -3091,6 +3108,205 @@ function TradingJournal() {
           </div>
         </div>
       )}
+
+      {/* SHARE P&L SUMMARY CARD MODAL */}
+      {sharePnLCard && (() => {
+        // Calculate stats based on timeframe
+        const now = new Date();
+        const getTimeframeTrades = () => {
+          if (sharePnLCard === "daily") {
+            const today = now.toISOString().split('T')[0];
+            return trades.filter(t => t.date.split('T')[0] === today);
+          } else if (sharePnLCard === "weekly") {
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+            return trades.filter(t => new Date(t.date) >= weekStart);
+          } else if (sharePnLCard === "monthly") {
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return trades.filter(t => new Date(t.date) >= monthStart);
+          }
+          return [];
+        };
+
+        const tfTrades = getTimeframeTrades();
+        const tfPnL = tfTrades.reduce((sum, t) => sum + t.pnl, 0);
+        const tfWinners = tfTrades.filter(t => t.pnl > 0);
+        const tfWinRate = tfTrades.length ? Math.round((tfWinners.length / tfTrades.length) * 100) : 0;
+        const tfBestTrade = tfTrades.length ? Math.max(...tfTrades.map(t => t.pnl)) : 0;
+        const tfWorstTrade = tfTrades.length ? Math.min(...tfTrades.map(t => t.pnl)) : 0;
+
+        const timeframeLabels = {
+          daily: "Today's Performance",
+          weekly: "This Week's Performance",
+          monthly: "This Month's Performance"
+        };
+
+        const dateRanges = {
+          daily: now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          weekly: (() => {
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay() + 1);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            return `${weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekEnd.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+          })(),
+          monthly: now.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        };
+
+        return (
+          <div onClick={() => setSharePnLCard(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(10px)" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: "32px", maxWidth: 600, width: "90%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <div>
+                  <p style={{ fontFamily: "Syne,sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Share P&L Summary</p>
+                  <p style={{ fontSize: 12, color: "#888" }}>{timeframeLabels[sharePnLCard]}</p>
+                </div>
+                <button onClick={() => setSharePnLCard(null)} style={{ background: "none", border: "none", fontSize: 24, color: "#666", cursor: "pointer", padding: 0 }}>×</button>
+              </div>
+
+              {/* Card Preview */}
+              <div id="pnl-card-preview" style={{
+                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+                borderRadius: 16,
+                padding: 40,
+                marginBottom: 24,
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                {/* Decorative background elements */}
+                <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, background: "radial-gradient(circle, rgba(127,255,178,0.1), transparent)", borderRadius: "50%" }}></div>
+                <div style={{ position: "absolute", bottom: -30, left: -30, width: 150, height: 150, background: "radial-gradient(circle, rgba(124,165,212,0.1), transparent)", borderRadius: "50%" }}></div>
+
+                {/* Journal Name */}
+                <div style={{ marginBottom: 32, position: "relative" }}>
+                  <p style={{
+                    fontFamily: "'Courier New', Courier, monospace",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    margin: 0
+                  }}>
+                    <span style={{ color: "#e45e54" }}>u</span>
+                    <span style={{ color: "#f28b57" }}>l</span>
+                    <span style={{ color: "#fabf53" }}>t</span>
+                    <span style={{ color: "#8bc268" }}>r</span>
+                    <span style={{ color: "#7ca5d4" }}>a</span>
+                    <span style={{ color: "#a08ecc" }}>t</span>
+                    <span style={{ color: "#c581b6" }}>r</span>
+                    <span style={{ color: "#e45e54" }}>a</span>
+                    <span style={{ color: "#f28b57" }}>c</span>
+                    <span style={{ color: "#fabf53" }}>k</span>
+                  </p>
+                  <p style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Trading Journal</p>
+                </div>
+
+                {/* Timeframe Header */}
+                <div style={{ marginBottom: 24, position: "relative" }}>
+                  <p style={{ fontSize: 12, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>{sharePnLCard} Performance</p>
+                  <p style={{ fontSize: 16, color: "#aaa", margin: 0 }}>{dateRanges[sharePnLCard]}</p>
+                </div>
+
+                {/* Main P&L */}
+                <div style={{ marginBottom: 32, position: "relative", textAlign: "center" }}>
+                  <p style={{ fontSize: 14, color: "#888", marginBottom: 8 }}>Net P&L</p>
+                  <p style={{
+                    fontFamily: "Syne,sans-serif",
+                    fontSize: 64,
+                    fontWeight: 700,
+                    color: tfPnL >= 0 ? "#7fffb2" : "#ff4466",
+                    margin: 0,
+                    lineHeight: 1
+                  }}>{tfPnL >= 0 ? "+" : ""}${tfPnL.toLocaleString()}</p>
+                </div>
+
+                {/* Stats Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Trades</p>
+                    <p style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0 }}>{tfTrades.length}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Win Rate</p>
+                    <p style={{ fontSize: 24, fontWeight: 700, color: tfWinRate >= 50 ? "#7fffb2" : "#ff4466", margin: 0 }}>{tfWinRate}%</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Best Trade</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: "#7fffb2", margin: 0 }}>+${tfBestTrade.toLocaleString()}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: 16, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <p style={{ fontSize: 10, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Worst Trade</p>
+                    <p style={{ fontSize: 20, fontWeight: 700, color: "#ff4466", margin: 0 }}>${tfWorstTrade.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {/* Consistency Badge */}
+                {tfWinRate >= 60 && tfPnL > 0 && (
+                  <div style={{ textAlign: "center", position: "relative" }}>
+                    <div style={{ display: "inline-block", background: "rgba(127,255,178,0.1)", padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(127,255,178,0.3)" }}>
+                      <p style={{ fontSize: 12, color: "#7fffb2", fontWeight: 600, margin: 0 }}>🔥 Consistent Performance</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  className="gbtn"
+                  onClick={() => {
+                    const card = document.getElementById('pnl-card-preview');
+                    html2canvas(card, {
+                      backgroundColor: null,
+                      scale: 2,
+                      logging: false
+                    }).then(canvas => {
+                      canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `pnl-${sharePnLCard}-${now.toISOString().split('T')[0]}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      });
+                    });
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  💾 Download Image
+                </button>
+                <button
+                  className="gbtn"
+                  onClick={async () => {
+                    const card = document.getElementById('pnl-card-preview');
+                    const canvas = await html2canvas(card, {
+                      backgroundColor: null,
+                      scale: 2,
+                      logging: false
+                    });
+                    canvas.toBlob(async blob => {
+                      try {
+                        await navigator.clipboard.write([
+                          new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        alert('P&L card copied to clipboard! Ready to paste in social media.');
+                      } catch (err) {
+                        alert('Could not copy to clipboard. Please use Download instead.');
+                      }
+                    });
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  📋 Copy to Clipboard
+                </button>
+              </div>
+
+              <p style={{ fontSize: 10, color: "#666", marginTop: 16, textAlign: "center", fontStyle: "italic" }}>
+                Share your {sharePnLCard} performance on social media
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* DELETE CONFIRMATION */}
       {deleteConfirm && (
